@@ -1,4 +1,9 @@
-/* line 3, /Users/wellcaffeinated/Documents/github/minutelabs/Labs-Boilerplate/library/styles/site.scss */
+/* line 3, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 html, body, #wrap-outer {
   height: 100%;
+}
+
+/* line 8, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+.dg input {
+  line-height: 1.4;
 }

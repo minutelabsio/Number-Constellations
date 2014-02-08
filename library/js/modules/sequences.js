@@ -47,6 +47,24 @@ define(
             return arr;
         };
 
+        API.fibonaccis = function( max ){
+
+            max = max || this.maxSeqLength;
+
+            var arr = [ 0, 1 ]
+                ,n = 1
+                ;
+
+            for ( n; n < max; ++n ){
+                
+                arr.push( arr[ n ] + arr[ n - 1 ] );
+            }
+            
+            arr.shift();
+            arr.shift();
+
+            return arr;
+        };
 
         return API;
     }

@@ -62,6 +62,15 @@ define(
             
             while ( i < max ){
                 for ( j = 0; j < edge; j++, i++ ){
+                    x += lr;
+                    arr.push([
+                        x,
+                        y
+                    ]);
+                }
+                lr *= -1;
+
+                for ( j = 0; j < edge; j++, i++ ){
                     y += td;
                     arr.push([
                         x,
@@ -69,16 +78,7 @@ define(
                     ]);
                 }
                 td *= -1;
-                
-                for ( j = 0; j < edge; j++, i++ ){
-                    x += lr;
-                    arr.push([
-                        x,
-                        y
-                    ]);
-                }
                 edge++;
-                lr *= -1;
             }
             
             return arr;
@@ -93,7 +93,7 @@ define(
             while ( i < max ){
                 r = Math.sqrt(i);
                 arr.push([
-                    -Math.cos( r * Tau ) * r,
+                    Math.cos( r * Tau ) * r,
                     Math.sin( r * Tau ) * r
                 ]);
                 i++;
@@ -122,7 +122,7 @@ define(
 
         return {
              ulamSpiral: ulamSpiral
-            ,sacks: sacksSpiral
+            ,sacksSpiral: sacksSpiral
             ,vogelSpiral: vogelSpiral
         }
     }
