@@ -157,50 +157,50 @@ define(
 
                 var self = this
                     ,spiral = Spirals.ulamSpiral( 10000 )
-                    ,seq = Sequences.primes( 10000 )
+                    ,seq = _(Sequences.primes( 10000 ))
                     ,coords
                     ,symb
                     ,color
                     ,size = 20
-                    ,r
+                    ,r = size * 0.5
+                    ,highlight
                     ;
 
-
-                // self.mainLayer.clearCache();
                 for ( var i = 0, l = spiral.length; i < l; ++i ){
                     
                     coords = spiral[ i ];
-                    color = (seq.indexOf( i + 1 ) > -1) ? '#a33' : '#ccc';
+                    highlight = (seq.indexOf( i + 1, true ) > -1);
+                    color = highlight ? '#a33' : '#ccc';
 
-                    if ( i < 25 ){
+                    symb = new Kinetic.Circle({
+                        x: coords[0] * size,
+                        y: coords[1] * size,
+                        width: size - 2,
+                        height: size - 2,
+                        fill: color
+                    });
+
+                    self.mainGroup.add( symb );
+
+                    if ( i < 99 ){
                         symb = new Kinetic.Text({
                             x: coords[0] * size,
                             y: coords[1] * size,
-                            offsetY: -(size - 12) * 0.5,
                             width: size,
                             height: size,
                             text: (i + 1) + '',
                             fontSize: 12,
                             fontFamily: 'monospace',
-                            fill: color,
-                            align: 'center'
-                        });
-                    } else {
-                        r = size * 0.5;
-                        symb = new Kinetic.Circle({
-                            x: coords[0] * size,
-                            y: coords[1] * size,
+                            fill: highlight ? '#511' : '#888',
+                            align: 'center',
                             offset: {
-                                x: -r,
-                                y: -r
-                            },
-                            width: size - 2,
-                            height: size - 2,
-                            fill: color
+                                x: size/2,
+                                y: (size - 8)/2
+                            }
                         });
-                    }
 
-                    self.mainGroup.add( symb );
+                        self.mainGroup.add( symb );
+                    } 
                 }
 
                 self.emit('zoom', 0);
