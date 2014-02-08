@@ -185,7 +185,12 @@ define(
                                 return;
                             }
                         } else {
-                            this._familyArr = Sequences[ val ]( 10000 );
+                            var fn = Sequences[ val ];
+                            if ( _.isFunction( fn ) ){
+                                this._familyArr = fn( 10000 );
+                            } else {
+                                this._familyArr = fn;
+                            }
                         }
                         
                         self.highlightSequence( this._familyArr, this._highlight );
@@ -225,6 +230,7 @@ define(
                 gui.add(settings, 'Family', {
                     'Primes': 'primes'
                     ,'Fibonacci Numbers': 'fibonaccis'
+                    ,'Vampire Numbers': 'vampire'
                     ,'Custom Function': 'custom'
                 });
 

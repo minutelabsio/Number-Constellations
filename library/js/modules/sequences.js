@@ -4,12 +4,12 @@
  */
 define(
     [
-        'lodash'
-        //'json!data/the_sequence'
+        'lodash',
+        'json!data/vampire.json'
     ],
     function(
-        _
-        //the_sequence
+        _,
+        vampire
     ){
 
         var API = {
@@ -65,6 +65,8 @@ define(
 
             return arr;
         };
+
+        API.vampire = vampire;
 
         return API;
     }
