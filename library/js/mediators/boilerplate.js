@@ -31,6 +31,7 @@ define(
             "Default": {
               "0": {
                 "Layout": "ulamSpiral",
+                "Limit": 10000,
                 "Family": "primes",
                 "custom": "n^2",
                 "connect": false,
@@ -80,6 +81,8 @@ define(
 
                 self.markers = [];
 
+                self.minZoom = 5;
+                self.maxZoom = -5;
                 self.setLayout = self.nonBlocking(self.setLayout);
                 self.highlightSequence = self.nonBlocking(self.highlightSequence);
 
@@ -96,20 +99,22 @@ define(
                 self.initSettings();
             },
 
-            nonBlocking: function( fn ){
+            nonBlocking: function( fn, time ){
 
                 var self = this
                     ,complete
                     ;
 
+                time = time || 200;
+
                 complete = function( args ){
                     fn.apply( self, args );
                     self.emit( 'progress', false );
                 };
-                return function(){
+                return _.debounce(function(){
                     self.emit( 'progress', true );
                     _.defer( complete, arguments );
-                };
+                }, time);
             },
 
             /**
@@ -119,14 +124,13 @@ define(
             initEvents : function(){
 
                 var self = this
-                    ,zoom = 0
                     ;
 
-                self.zoom = zoom;
+                self.zoom = 0;
 
                 self.after('domready').then(function(){
 
-                    var hammertime = Hammer( self.el ).on("mousewheel", function(ev) { 
+                    var hammertime = Hammer( self.el ).on('mousewheel', function(ev) { 
                         // create some hammerisch eventData
                         var eventType = 'scroll';
                         var touches   = Hammer.event.getTouchList(ev, eventType);
@@ -134,16 +138,34 @@ define(
                         
                         // you should calculate the zooming over here, 
                         // should be something like wheelDelta * the current scale level, or something...
-                        zoom += Math.min(Math.abs(ev.wheelDelta) / 50, 0.2) * sign(ev.wheelDelta);
-                        eventData.scale = zoom;//ev.wheelDelta;
-                        self.zoom = zoom;
+                        self.zoom += Math.min(Math.abs(ev.wheelDelta) / 50, 0.2) * sign(ev.wheelDelta);
+                        eventData.scale = self.zoom;//ev.wheelDelta;
                         
                         // trigger transform event
-                        hammertime.trigger("transform", eventData);
-                        self.emit('zoom', zoom);
+                        hammertime.trigger('transform', eventData);
                         
                         // prevent scrolling
                         ev.preventDefault();
+                    });
+
+                    hammertime.on('transform', function( ev ){
+                        self.zoom = Math.min(self.minZoom, Math.max(self.maxZoom, ev.gesture.scale));
+                        self.emit('zoom', self.zoom);
+                    });
+
+                    hammertime.on('dragstart', function( ev ){
+                        self.emit('movestart');
+                    });
+
+                    hammertime.on('drag', function( ev ){
+                        self.emit('move', {
+                            x: ev.gesture.deltaX
+                            ,y: ev.gesture.deltaY
+                        });
+                    });
+
+                    hammertime.on('dragend', function( ev ){
+                        self.emit('moveend');
                     });
                 });
 
@@ -168,8 +190,19 @@ define(
                     }
                     ,set Layout ( val ){
                         this._layout = val;
-                        this._layoutArr = Spirals[ val ]( 10000 );
+                        this._layoutArr = Spirals[ val ]( this._limit );
                         self.setLayout( this._layoutArr );
+                    }
+                    ,_limit: 10000
+                    ,get Limit (){
+                        return this._limit;
+                    }
+                    ,set Limit ( val ){
+                        if ( this._limit !== val ){
+                            this._limit = val;
+                            this.Family = this.Family;
+                            this.Layout = this.Layout;
+                        }
                     }
                     // family
                     ,_family: 'primes'
@@ -180,14 +213,14 @@ define(
                         this._family = val;
                         if ( val === 'custom' ){
                             try {
-                                this._familyArr = _.times( 10000, mathParse( this._custom ) );
+                                this._familyArr = _.times( this._limit, mathParse( this._custom ) );
                             } catch ( e ){
                                 return;
                             }
                         } else {
                             var fn = Sequences[ val ];
                             if ( _.isFunction( fn ) ){
-                                this._familyArr = fn( 10000 );
+                                this._familyArr = fn( this._limit );
                             } else {
                                 this._familyArr = fn;
                             }
@@ -222,10 +255,13 @@ define(
                 gui.remember(settings);
 
                 gui.add(settings, 'Layout', {
-                    'Ulam Spiral': 'ulamSpiral'
+                    'Grid': 'grid'
+                    ,'Ulam Spiral': 'ulamSpiral'
                     ,'Sacks Spiral': 'sacksSpiral'
                     ,'Vogel Spiral': 'vogelSpiral'
                 });
+
+                gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]);
 
                 gui.add(settings, 'Family', {
                     'Primes': 'primes'
@@ -251,6 +287,8 @@ define(
                     ,$win = $(window)
                     ,w = $win.width()
                     ,h = $win.height()
+                    ,offset = { x: -w/2, y: -h/2 }
+                    ,pos = { x: w/2, y: h/2 }
                     ,el = document.createElement('div')
                     ;
 
@@ -260,26 +298,32 @@ define(
                 mainLayer.add( mainGroup );
                 stage.add( mainLayer );
                 
-                var uncache = _.debounce(function(){
+                var cache = _.debounce(function(){
+                    var invScale = 1/scale;
+                    pos.x += offset.x * invScale;
+                    pos.y += offset.y * invScale;
                     mainGroup.cache({
-                            x: 0,
-                            y: 0,
+                            x: pos.x,
+                            y: pos.y,
                             width: w,
                             height: h
                         })
-                        .offset({
-                            x: w/2,
-                            y: h/2
-                        })
-                        .scaleX( 1/scale )
-                        .scaleY( 1/scale )
+                        .offsetX( w/2 )
+                        .offsetY( h/2 )
+                        .scaleX( 1 * invScale )
+                        .scaleY( 1 * invScale )
                         ;
+
+                    offset.x = 0;
+                    offset.y = 0;
                 }, 400);
 
-                function refresh( nocache ){
+                function refresh(){
 
                     stage.setWidth( w );
                     stage.setHeight( h );
+                    mainGroup.offsetX( offset.x + w/2 );
+                    mainGroup.offsetY( offset.y + h/2 );
                     mainLayer.offsetX( -w/2/scale );
                     mainLayer.offsetY( -h/2/scale );
                     mainLayer.scale({
@@ -287,10 +331,7 @@ define(
                         y: scale
                     });
                     stage.batchDraw();
-
-                    if ( nocache !== false ){
-                        uncache();
-                    }
+                    cache();
                 }
 
                 // window resizing
@@ -305,10 +346,28 @@ define(
                     refresh();
                 });
 
+                self.on('movestart', function(){
+                    var old = { x: offset.x, y: offset.y }
+                        ;
+
+                    function off(){
+                        self.off('moveend', off);
+                        self.off('move', move);
+                    }
+
+                    function move( e, delta ){
+                        offset.x = ( old.x - delta.x );
+                        offset.y = ( old.y - delta.y );
+                        refresh();
+                    }
+
+                    self.on('moveend', off);
+                    self.on('move', move);
+                });
+
                 self.after('domready').then(function(){
 
                     self.$el.append( el );
-                    refresh( false );
                 });
 
                 self.on('refresh-highlight', refresh);
@@ -431,10 +490,17 @@ define(
              */
             onDomReady : function(){
 
-                var self = this;
+                var self = this
+                    ,$progress = $('#progress')
+                    ;
                 self.$el = $('#canvas-wrap');
                 self.el = self.$el[0];
 
+                self.$el.append($progress);
+
+                self.on('progress', function( e, active ){
+                    $progress.toggle( active );
+                });
             }
 
         }, ['events']);

@@ -120,10 +120,33 @@ define(
             return arr;
         }
 
+        function grid( stop ){
+
+            var i = 1
+                ,x = 0
+                ,y = 0
+                ,arr = []
+                ,w = Math.max(2, Math.round(Math.sqrt( stop )))
+                ;
+
+            while ( i < stop ){
+                for ( x = 0; x < w; x++, i++ ){
+                    if ( i >= stop ){
+                        break;
+                    }
+                    arr.push([ x, -y ]);
+                }
+                y++;
+            }
+
+            return arr;
+        }
+
         return {
              ulamSpiral: ulamSpiral
             ,sacksSpiral: sacksSpiral
             ,vogelSpiral: vogelSpiral
+            ,grid: grid
         }
     }
 );
