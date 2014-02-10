@@ -1,5 +1,6 @@
 // site styles
 @import 'compass/css3';
+@import '_vars';
 
 html, body, #wrap-outer {
     height: 100%;
@@ -35,3 +36,42 @@ html, body, #wrap-outer {
         text-align: center;
     }
 }
+
+#canvas-wrap {
+    cursor: move;
+    line-height: 0;
+}
+
+#more-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30%;
+    overflow: auto;
+    padding: 2em;
+    background: rgba(255, 255, 255, 0.8);
+    border-top: 1px solid transparentize($deep-grey, 0.7);
+    color: $deep-grey;
+    @include transition( height 0.3s ease );
+
+    .title {
+        margin-top: 0;
+    }
+
+    .hide {
+        position: absolute;
+        top: 1em;
+        right: 1em;
+    }
+
+    &.closed {
+        cursor: pointer;
+        height: 2em;
+
+        .hide {
+            display: none;
+        }
+    }
+}
+

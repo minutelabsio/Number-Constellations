@@ -6,6 +6,7 @@ define(
         'hammer',
         'dat',
         'math',
+        'when',
         'modules/sequences',
         'modules/spirals'
     ],
@@ -16,6 +17,7 @@ define(
         Hammer,
         dat,
         mathjs,
+        when,
         Sequences,
         Spirals
     ) {
@@ -35,7 +37,7 @@ define(
                 "Family": "primes",
                 "custom": "n^2",
                 "connect": false,
-                "highlight": "#a33"
+                "highlight": "rgb(167, 42, 34)"
               }
             }
           },
@@ -80,6 +82,7 @@ define(
                 var self = this;
 
                 self.markers = [];
+                self.labels = [];
 
                 self.minZoom = 5;
                 self.maxZoom = -5;
@@ -103,18 +106,31 @@ define(
 
                 var self = this
                     ,complete
+                    ,cb
+                    ,dfd
                     ;
 
-                time = time || 200;
+                time = time || 50;
 
-                complete = function( args ){
+                cb = function( args ){
                     fn.apply( self, args );
+                    if ( dfd ){
+                        dfd.resolve();
+                    }
+                    dfd = false;
                     self.emit( 'progress', false );
                 };
-                return _.debounce(function(){
+
+                complete = _.debounce(function(){
                     self.emit( 'progress', true );
-                    _.defer( complete, arguments );
+                    _.defer( cb, arguments );
                 }, time);
+
+                return function(){
+                    dfd = dfd || when.defer();
+                    complete.apply(self, arguments);
+                    return dfd.promise;
+                };
             },
 
             /**
@@ -126,7 +142,16 @@ define(
                 var self = this
                     ;
 
-                self.zoom = 0;
+                self.zoom = 1;
+
+                $(document)
+                    .on('click', '#more-info', function(){
+                        $(this).removeClass('closed');
+                    })
+                    .on('click', '#more-info .hide', function(){
+                        $('#more-info').addClass('closed');
+                        return false;
+                    });
 
                 self.after('domready').then(function(){
 
@@ -168,11 +193,6 @@ define(
                         self.emit('moveend');
                     });
                 });
-
-                self.on('refresh-layout', function(){
-                    // refresh highlight when layout changed
-                    self.highlightSequence( true );
-                });
             },
 
             initSettings: function(){
@@ -189,9 +209,14 @@ define(
                         return this._layout;
                     }
                     ,set Layout ( val ){
+                        var color = this._highlight;
                         this._layout = val;
                         this._layoutArr = Spirals[ val ]( this._limit );
-                        self.setLayout( this._layoutArr );
+                        this.refreshSequence();
+                        self.sequence = this._familyArr;
+                        self.setLayout( this._layoutArr ).then(function(){
+                            self.highlightSequence( true, color );
+                        });
                     }
                     ,_limit: 10000
                     ,get Limit (){
@@ -200,7 +225,8 @@ define(
                     ,set Limit ( val ){
                         if ( this._limit !== val ){
                             this._limit = val;
-                            this.Family = this.Family;
+                            this.refreshSequence();
+                            self.sequence = this._familyArr;
                             this.Layout = this.Layout;
                         }
                     }
@@ -211,6 +237,11 @@ define(
                     }
                     ,set Family( val ){
                         this._family = val;
+                        this.refreshSequence();
+                        self.highlightSequence( this._familyArr, this._highlight );
+                    }
+                    ,refreshSequence: function(){
+                        var val = this._family;
                         if ( val === 'custom' ){
                             try {
                                 this._familyArr = _.times( this._limit, mathParse( this._custom ) );
@@ -225,8 +256,6 @@ define(
                                 this._familyArr = fn;
                             }
                         }
-                        
-                        self.highlightSequence( this._familyArr, this._highlight );
                     }
                     // custom
                     ,_custom: 'n^2'
@@ -283,12 +312,12 @@ define(
                     ,stage
                     ,mainLayer
                     ,mainGroup
-                    ,scale = 1
+                    ,scale = Math.pow(2, self.zoom)
                     ,$win = $(window)
                     ,w = $win.width()
                     ,h = $win.height()
                     ,offset = { x: -w/2, y: -h/2 }
-                    ,pos = { x: w/2, y: h/2 }
+                    ,pos = { x: w/2/scale, y: h/2/scale }
                     ,el = document.createElement('div')
                     ;
 
@@ -316,6 +345,8 @@ define(
 
                     offset.x = 0;
                     offset.y = 0;
+                    
+                    self.emit('redraw');
                 }, 400);
 
                 function refresh(){
@@ -368,6 +399,7 @@ define(
                 self.after('domready').then(function(){
 
                     self.$el.append( el );
+                    $win.trigger('resize');
                 });
 
                 self.on('refresh-highlight', refresh);
@@ -382,6 +414,10 @@ define(
                     ,r = size * 0.5
                     ,x
                     ,y
+                    ,i
+                    ,l
+                    ,markerLen = self.markers.length
+                    ,labelLen = self.labels.length
                     ;
 
                 if ( layout === self.layout ){
@@ -390,45 +426,72 @@ define(
                 }
 
                 self.layout = layout;
-                self.mainGroup.destroyChildren();
-                self.markers.length = 0;
-
-                for ( var i = 0, l = layout.length; i < l; ++i ){
+                // self.markers.length = 0;
+                // self.mainGroup.destroyChildren();
+                
+                for ( i = 0, l = layout.length; i < l; ++i ){
                     
                     coords = layout[ i ];
                     x = coords[0] * size;
                     y = -coords[1] * size;
+
+                    if ( i < markerLen ){
+                        
+                        symb = self.markers[ i ];
+                        symb.x( x );
+                        symb.y( y );
+                        symb.show();
+                        symb.fill( '#ccc' );
+
+                    } else {
                     
-                    symb = new Kinetic.Circle({
-                        x: x,
-                        y: y,
-                        width: size - 2,
-                        height: size - 2,
-                        fill: '#ccc'
-                    });
-
-                    self.markers.push( symb );
-                    self.mainGroup.add( symb );
-
-                    if ( i < 99 ){
-                        symb = new Kinetic.Text({
+                        symb = new Kinetic.Circle({
                             x: x,
                             y: y,
-                            width: size,
-                            height: size,
-                            text: (i + 1) + '',
-                            fontSize: 12,
-                            fontFamily: 'monospace',
-                            fill: 'rgba(20, 20, 20, 0.3)',
-                            align: 'center',
-                            offset: {
-                                x: size/2,
-                                y: (size - 8)/2
-                            }
+                            width: size - 2,
+                            height: size - 2,
+                            fill: '#ccc'
                         });
 
+                        self.markers.push( symb );
                         self.mainGroup.add( symb );
-                    } 
+                    }
+
+                    if ( i < 99 ){
+                        if ( i < labelLen ){
+
+                            symb = self.labels[ i ];
+                            symb.x( x );
+                            symb.y( y );
+
+                        } else {
+
+                            symb = new Kinetic.Text({
+                                x: x,
+                                y: y,
+                                width: size,
+                                height: size,
+                                text: (i + 1) + '',
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                fill: 'rgba(20, 20, 20, 0.5)',
+                                align: 'center',
+                                offset: {
+                                    x: size/2,
+                                    y: (size - 8)/2
+                                }
+                            });
+
+                            self.labels.push( symb );
+                            self.mainGroup.add( symb );
+                        }
+                    }
+                }
+
+                for ( i = l; i < markerLen; ++i ){
+                    
+                    symb = self.markers[ i ];
+                    symb.hide();
                 }
 
                 self.emit('refresh-layout');
@@ -459,7 +522,7 @@ define(
                 if ( seq === true ){
                     // force refresh with same values
                     seq = self.sequence;
-                    color = self.highlightColor;
+                    color = color || self.highlightColor;
                 } else {
                     self.sequence = seq;
                     self.highlightColor = color || '#a33';
@@ -496,10 +559,12 @@ define(
                 self.$el = $('#canvas-wrap');
                 self.el = self.$el[0];
 
-                self.$el.append($progress);
-
                 self.on('progress', function( e, active ){
                     $progress.toggle( active );
+                });
+
+                self.on('redraw', function(){
+                    $progress.hide();
                 });
             }
 

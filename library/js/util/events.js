@@ -92,7 +92,9 @@ define(
                 while ( i < l ){
                     
                     e.handler = listeners[ i ];
-                    e.handler( e, data );
+                    if ( e.handler ){
+                        e.handler( e, data );
+                    }
                     i++;
                 }
 
