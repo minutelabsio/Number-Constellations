@@ -8,9 +8,7 @@ require.config({
     },
     
     shim: {
-        'dat': {
-            exports: 'dat'
-        }
+        
     },
 
     paths: {
@@ -44,7 +42,10 @@ require.config({
         'kinetic': 'vendor/kinetic',
 
         // settings
-        'dat': 'vendor/dat.gui'
+        'dat': 'vendor/dat.gui',
+
+        // math.js utility library
+        'math': 'vendor/math'
     },
 
     packages: [
