@@ -3,7 +3,8 @@ define(
         'jquery',
         'moddef',
         'kinetic',
-        'hammer',
+        'hammer.jquery',
+        'mousetrap',
         'dat',
         'math',
         'when',
@@ -14,7 +15,8 @@ define(
         $,
         M,
         Kinetic,
-        Hammer,
+        _Hammer,
+        Mousetrap,
         dat,
         mathjs,
         when,
@@ -84,8 +86,9 @@ define(
                 self.markers = [];
                 self.labels = [];
 
-                self.minZoom = 5;
-                self.maxZoom = -5;
+                self.maxScale = 20;
+                self.minScale = 0.01;
+                self.scale = 1;
                 self.setLayout = self.nonBlocking(self.setLayout);
                 self.highlightSequence = self.nonBlocking(self.highlightSequence);
 
@@ -140,58 +143,71 @@ define(
             initEvents : function(){
 
                 var self = this
+                    ,scale = self.scale
+                    ,lastScale
                     ;
 
-                self.zoom = 1;
-
-                $(document)
-                    .on('click', '#more-info', function(){
-                        $(this).removeClass('closed');
-                    })
-                    .on('click', '#more-info .hide', function(){
-                        $('#more-info').addClass('closed');
-                        return false;
-                    });
+                function scaleEvent(){
+                    scale = Math.max(self.minScale, Math.min(self.maxScale, scale))
+                    self.emit('scale', scale);
+                }
 
                 self.after('domready').then(function(){
 
-                    var hammertime = Hammer( self.el ).on('mousewheel', function(ev) { 
-                        // create some hammerisch eventData
-                        var eventType = 'scroll';
-                        var touches   = Hammer.event.getTouchList(ev, eventType);
-                        var eventData = Hammer.event.collectEventData(this, eventType, touches, ev);
-                        
-                        // you should calculate the zooming over here, 
-                        // should be something like wheelDelta * the current scale level, or something...
-                        self.zoom += Math.min(Math.abs(ev.wheelDelta) / 50, 0.2) * sign(ev.wheelDelta);
-                        eventData.scale = self.zoom;//ev.wheelDelta;
-                        
-                        // trigger transform event
-                        hammertime.trigger('transform', eventData);
-                        
-                        // prevent scrolling
+                    var hammertime = $('#viewport').hammer();
+
+                    hammertime.on('mousewheel', '#canvas-wrap', function( ev ) { 
+                        var zoom = Math.min(Math.abs(ev.originalEvent.wheelDelta) / 50, 0.2) * sign(ev.originalEvent.wheelDelta);
+                        scale *= Math.pow(2, zoom);
+                        scaleEvent();
                         ev.preventDefault();
                     });
 
-                    hammertime.on('transform', function( ev ){
-                        self.zoom = Math.min(self.minZoom, Math.max(self.maxZoom, ev.gesture.scale));
-                        self.emit('zoom', self.zoom);
+                    hammertime.on('transformstart', '#canvas-wrap', function( ev ){
+                        lastScale = scale;
                     });
 
-                    hammertime.on('dragstart', function( ev ){
+                    hammertime.on('transform', '#canvas-wrap', function( ev ){
+                        scale = lastScale * ev.gesture.scale;
+                        scaleEvent();
+                        ev.preventDefault();
+                    });
+
+                    hammertime.on('dragstart', '#canvas-wrap', function( ev ){
                         self.emit('movestart');
                     });
 
-                    hammertime.on('drag', function( ev ){
+                    hammertime.on('drag', '#canvas-wrap', function( ev ){
                         self.emit('move', {
                             x: ev.gesture.deltaX
                             ,y: ev.gesture.deltaY
                         });
                     });
 
-                    hammertime.on('dragend', function( ev ){
+                    hammertime.on('dragend', '#canvas-wrap', function( ev ){
                         self.emit('moveend');
                     });
+
+                    hammertime.on('tap', '#more-info', function(){
+                            $(this).toggleClass('closed');
+                        })
+                        .on('tap', '#more-info .hide', function(){
+                            $('#more-info').addClass('closed');
+                            return false;
+                        })
+                        ;
+                });
+
+                Mousetrap.bind('command+=', function(){
+                    scale *= 2;
+                    scaleEvent();
+                    return false;
+                });
+
+                Mousetrap.bind('command+-', function(){
+                    scale *= 0.5;
+                    scaleEvent();
+                    return false;
                 });
             },
 
@@ -312,7 +328,7 @@ define(
                     ,stage
                     ,mainLayer
                     ,mainGroup
-                    ,scale = Math.pow(2, self.zoom)
+                    ,scale = self.scale
                     ,$win = $(window)
                     ,w = $win.width()
                     ,h = $win.height()
@@ -372,8 +388,8 @@ define(
                     refresh();
                 });
 
-                self.on('zoom', function( e, zoom ){
-                    scale = Math.pow(2, zoom);
+                self.on('scale', function( e, s ){
+                    scale = s;
                     refresh();
                 });
 

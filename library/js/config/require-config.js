@@ -36,7 +36,11 @@ require.config({
         'jquery': 'vendor/jquery',
 
         // Mouse/Touch events
-        'hammer': 'vendor/hammer',
+        'hammerjs': 'vendor/hammer',
+        'hammer.jquery': 'vendor/hammer.jquery',
+
+        // keyboard events
+        'mousetrap': 'vendor/mousetrap',
 
         // canvas draw
         'kinetic': 'vendor/kinetic',
