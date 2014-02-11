@@ -226,12 +226,13 @@ define(
                     }
                     ,set Layout ( val ){
                         var color = this._highlight;
+                        var con = this._connect;
                         this._layout = val;
                         this._layoutArr = Spirals[ val ]( this._limit );
                         this.refreshSequence();
                         self.sequence = this._familyArr;
                         self.setLayout( this._layoutArr ).then(function(){
-                            self.highlightSequence( true, color );
+                            self.highlightSequence( true, color, con );
                         });
                     }
                     ,_limit: 10000
@@ -254,7 +255,7 @@ define(
                     ,set Family( val ){
                         this._family = val;
                         this.refreshSequence();
-                        self.highlightSequence( this._familyArr, this._highlight );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
                     }
                     ,refreshSequence: function(){
                         var val = this._family;
@@ -285,7 +286,14 @@ define(
                         }
                     }
                     // connect the dots?
-                    ,connect: false
+                    ,_connect: false
+                    ,get connect(){
+                        return this._connect;
+                    }
+                    ,set connect( val ){
+                        this._connect = val;
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                    }
                     // highlight color
                     ,_highlight: '#a33'
                     ,get highlight (){
@@ -293,7 +301,7 @@ define(
                     }
                     ,set highlight ( val ){
                         this._highlight = val;
-                        self.highlightSequence( this._familyArr, this._highlight );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
                     }
                 };
 
@@ -340,6 +348,13 @@ define(
                 stage = self.stage = new Kinetic.Stage({ container: el });
                 mainLayer = self.mainLayer = new Kinetic.Layer();
                 mainGroup = self.mainGroup = new Kinetic.Group();
+                self.connectLine = new Kinetic.Line({
+                    points: [0,0,100,100]
+                    ,x: 0
+                    ,y: 0
+                    ,strokeWidth: 2
+                });
+                mainGroup.add( self.connectLine );
                 mainLayer.add( mainGroup );
                 stage.add( mainLayer );
                 
@@ -504,6 +519,7 @@ define(
                     }
                 }
 
+                // hide unneeded markers
                 for ( i = l; i < markerLen; ++i ){
                     
                     symb = self.markers[ i ];
@@ -513,7 +529,7 @@ define(
                 self.emit('refresh-layout');
             },
 
-            highlightSequence: function( seq, color ){
+            highlightSequence: function( seq, color, connect ){
 
                 var self = this
                     ,markers = this.markers
@@ -521,9 +537,14 @@ define(
                     ,pos
                     ,i
                     ,l
+                    ,line = []
                     ;
 
-                if ( seq !== true && seq === self.sequence && self.highlightColor === color ){
+                if ( seq !== true && 
+                    seq === self.sequence && 
+                    self.highlightColor === color && 
+                    self.connectLine.visible() === (!!connect) 
+                ){
                     // no change
                     return;
                 }
@@ -539,9 +560,11 @@ define(
                     // force refresh with same values
                     seq = self.sequence;
                     color = color || self.highlightColor;
+                    connect = self.connectLine.visible();
                 } else {
                     self.sequence = seq;
                     self.highlightColor = color || '#a33';
+                    self.connectLine.visible( !!connect );
                 }
 
                 if ( !seq ){
@@ -558,7 +581,20 @@ define(
                     }
 
                     m.fill( color );
+                    if ( connect ){
+                        line.push( m.x(), m.y() );
+                    }
                 }
+
+                self.connectLine
+                    .points( line )
+                    .stroke( self.highlightColor )
+                    .moveToTop()
+                    ;
+
+                _.each(self.labels, function( node ){
+                    node.moveToTop();
+                });
 
                 self.emit('refresh-highlight');
             },
