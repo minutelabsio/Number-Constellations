@@ -5,11 +5,15 @@
 define(
     [
         'lodash',
-        'json!data/vampire.json'
+        'json!data/vampire.json',
+        'json!data/carmichael.json',
+        'json!data/metadromes.json'
     ],
     function(
         _,
-        vampire
+        vampire,
+        carmichael,
+        metadromes
     ){
         /**
          * NOTE: all sums start at n = 1, not zero because we don't plot zero
@@ -28,6 +32,10 @@ define(
 
         function getFib( n ){
             return Math.round(Math.pow(Phi, n) * invSqrt5);
+        }
+
+        function rndInt( n ){
+            return Math.floor(Math.random() * n);
         }
 
         var API = {
@@ -131,7 +139,31 @@ define(
             return arr;
         };
 
+        API.randoms = function( max ){
+
+            max = max || this.maxSeqLength;
+
+            var n = 0
+                ,v = rndInt( 10 )
+                ,arr = [ v ]
+                ;
+
+            // if byIndex, then we get the numbers up to the index "max"
+            // otherwise we get the number value nearest "max"
+            while ( v < max ){
+                v = arr[ n ] + rndInt( 10 );
+                arr.push( v );
+                n++;
+            }
+
+            return arr;
+        };
+
+        metadromes.shift(); // remove the leading zero
+
         API.vampire = vampire;
+        API.carmichael = carmichael;
+        API.metadromes = metadromes;
 
         return API;
     }

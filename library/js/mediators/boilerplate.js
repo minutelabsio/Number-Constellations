@@ -216,6 +216,7 @@ define(
                 var self = this
                     ,gui = new dat.GUI({ load: DEFAULTS })
                     ,settings
+                    ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
                     ;
 
                 settings = {
@@ -269,6 +270,10 @@ define(
                             } catch ( e ){
                                 return;
                             }
+                        } else if ( val === 'randomsWeighted' ){
+
+                            this._familyArr = _.times( this._limit, Math.random );
+
                         } else {
                             var fn = Sequences[ val ];
                             if ( _.isFunction( fn ) ){
@@ -277,12 +282,8 @@ define(
                                 this._familyArr = fn;
                             }
                         }
-
-                        if ( val === 'fibonacciSums' ){
-                            this._weighted = true;
-                        } else {
-                            this._weighted = false;
-                        }
+                        
+                        this._weighted = (_.indexOf(weightedSeqs, val) > -1);
                     }
                     // custom
                     ,_custom: 'n^2'
@@ -332,9 +333,13 @@ define(
 
                 gui.add(settings, 'Family', {
                     'Primes': 'primes'
+                    ,'Carmichael': 'carmichael'
                     ,'Fibonacci Numbers': 'fibonaccis'
                     ,'Fibonacci Sums' : 'fibonacciSums'
                     ,'Vampire Numbers': 'vampire'
+                    ,'Largest Metadromes in base n': 'metadromes'
+                    ,'Random': 'randoms'
+                    ,'Random (weighted)': 'randomsWeighted'
                     ,'Custom Function': 'custom'
                 });
 
