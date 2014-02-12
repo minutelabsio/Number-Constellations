@@ -113,7 +113,7 @@ define(
                     ,dfd
                     ;
 
-                time = time || 50;
+                time = time || 200;
 
                 cb = function( args ){
                     fn.apply( self, args );
@@ -121,7 +121,7 @@ define(
                         dfd.resolve();
                     }
                     dfd = false;
-                    self.emit( 'progress', false );
+                    // self.emit( 'progress', false );
                 };
 
                 complete = _.debounce(function(){
@@ -232,7 +232,9 @@ define(
                         this.refreshSequence();
                         self.sequence = this._familyArr;
                         self.setLayout( this._layoutArr ).then(function(){
-                            self.highlightSequence( true, color, con );
+                            return self.highlightSequence( true, color, con );
+                        }).then(function(){
+                            self.emit('refresh');
                         });
                     }
                     ,_limit: 10000
@@ -255,7 +257,9 @@ define(
                     ,set Family( val ){
                         this._family = val;
                         this.refreshSequence();
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
                     }
                     ,refreshSequence: function(){
                         var val = this._family;
@@ -272,6 +276,12 @@ define(
                             } else {
                                 this._familyArr = fn;
                             }
+                        }
+
+                        if ( val === 'fibonacciSums' ){
+                            this._weighted = true;
+                        } else {
+                            this._weighted = false;
                         }
                     }
                     // custom
@@ -292,7 +302,9 @@ define(
                     }
                     ,set connect( val ){
                         this._connect = val;
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
                     }
                     // highlight color
                     ,_highlight: '#a33'
@@ -301,7 +313,9 @@ define(
                     }
                     ,set highlight ( val ){
                         this._highlight = val;
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
                     }
                 };
 
@@ -319,6 +333,7 @@ define(
                 gui.add(settings, 'Family', {
                     'Primes': 'primes'
                     ,'Fibonacci Numbers': 'fibonaccis'
+                    ,'Fibonacci Sums' : 'fibonacciSums'
                     ,'Vampire Numbers': 'vampire'
                     ,'Custom Function': 'custom'
                 });
@@ -376,8 +391,9 @@ define(
 
                     offset.x = 0;
                     offset.y = 0;
-                    
+                    stage.draw();
                     self.emit('redraw');
+                    self.emit( 'progress', false );
                 }, 400);
 
                 function refresh(){
@@ -427,13 +443,13 @@ define(
                     self.on('move', move);
                 });
 
+                self.on('refresh', refresh);
+
                 self.after('domready').then(function(){
 
                     self.$el.append( el );
                     $win.trigger('resize');
                 });
-
-                self.on('refresh-highlight', refresh);
             },
 
             setLayout: function( layout ){
@@ -529,7 +545,7 @@ define(
                 self.emit('refresh-layout');
             },
 
-            highlightSequence: function( seq, color, connect ){
+            highlightSequence: function( seq, color, connect, weighted ){
 
                 var self = this
                     ,markers = this.markers
@@ -537,6 +553,7 @@ define(
                     ,pos
                     ,i
                     ,l
+                    ,w
                     ,line = []
                     ;
 
@@ -552,17 +569,22 @@ define(
                 if ( self.sequence && seq !== self.sequence ){
                     // reset the colors to default
                     for ( i = 0, l = markers.length; i < l; ++i ){
-                        markers[ i ].fill( '#ccc' );
+                        markers[ i ]
+                            .fill( '#ccc' )
+                            .opacity( 1 )
+                            ;
                     }
                 }
 
                 if ( seq === true ){
                     // force refresh with same values
                     seq = self.sequence;
+                    weighted = self.weighted;
                     color = color || self.highlightColor;
                     connect = self.connectLine.visible();
                 } else {
                     self.sequence = seq;
+                    self.weighted = weighted;
                     self.highlightColor = color || '#a33';
                     self.connectLine.visible( !!connect );
                 }
@@ -572,29 +594,49 @@ define(
                     return;
                 }
 
-                for ( i = 0, l = seq.length; i < l; ++i ){
+                if ( weighted ){
+                    w = 1 / _.max(seq);
+                    // highlight by weight
+                    for ( i = 0, l = seq.length; i < l; ++i ){
                     
-                    pos = seq[ i ] - 1;
-                    m = markers[ pos ];
-                    if ( !m ){
-                        break;
+                        pos = seq[ i ]; // weight
+                        m = markers[ i ];
+                        if ( !m ){
+                            break;
+                        }
+
+                        m.fill( color );
+                        m.opacity( pos * w );
                     }
 
-                    m.fill( color );
-                    if ( connect ){
-                        line.push( m.x(), m.y() );
+                    self.connectLine.points( [] );
+
+                } else {
+                    // highlight the numbers in the sequence
+                    for ( i = 0, l = seq.length; i < l; ++i ){
+                        
+                        pos = seq[ i ] - 1;
+                        m = markers[ pos ];
+                        if ( !m ){
+                            break;
+                        }
+
+                        m.fill( color );
+                        if ( connect ){
+                            line.push( m.x(), m.y() );
+                        }
                     }
+
+                    self.connectLine
+                        .points( line )
+                        .stroke( self.highlightColor )
+                        .moveToTop()
+                        ;
+
+                    _.each(self.labels, function( node ){
+                        node.moveToTop();
+                    });
                 }
-
-                self.connectLine
-                    .points( line )
-                    .stroke( self.highlightColor )
-                    .moveToTop()
-                    ;
-
-                _.each(self.labels, function( node ){
-                    node.moveToTop();
-                });
 
                 self.emit('refresh-highlight');
             },
@@ -612,6 +654,7 @@ define(
                 self.el = self.$el[0];
 
                 self.on('progress', function( e, active ){
+                    self.$el.toggleClass('loading', active);
                     $progress.toggle( active );
                 });
 

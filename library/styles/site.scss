@@ -40,6 +40,10 @@ html, body, #wrap-outer {
 #canvas-wrap {
     cursor: move;
     line-height: 0;
+
+    &.loading {
+        cursor: wait;
+    }
 }
 
 #more-info {
