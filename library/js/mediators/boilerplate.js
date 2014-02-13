@@ -39,7 +39,8 @@ define(
                 "Family": "primes",
                 "custom": "n^2",
                 "connect": false,
-                "highlight": "rgb(167, 42, 34)"
+                "highlight": "rgb(167, 42, 34)",
+                "zoom to": 1
               }
             }
           },
@@ -148,13 +149,12 @@ define(
             initEvents : function(){
 
                 var self = this
-                    ,scale = self.scale
                     ,lastScale
                     ;
 
                 function scaleEvent(){
-                    scale = Math.max(self.minScale, Math.min(self.maxScale, scale))
-                    self.emit('scale', scale);
+                    self.scale = Math.max(self.minScale, Math.min(self.maxScale, self.scale))
+                    self.emit('scale', self.scale);
                 }
 
                 self.after('domready').then(function(){
@@ -163,17 +163,17 @@ define(
 
                     hammertime.on('mousewheel', '#canvas-wrap', function( ev ) { 
                         var zoom = Math.min(Math.abs(ev.originalEvent.wheelDelta) / 50, 0.2) * sign(ev.originalEvent.wheelDelta);
-                        scale *= Math.pow(2, zoom);
+                        self.scale *= Math.pow(2, zoom);
                         scaleEvent();
                         ev.preventDefault();
                     });
 
                     hammertime.on('transformstart', '#canvas-wrap', function( ev ){
-                        lastScale = scale;
+                        lastScale = self.scale;
                     });
 
                     hammertime.on('transform', '#canvas-wrap', function( ev ){
-                        scale = lastScale * ev.gesture.scale;
+                        self.scale = lastScale * ev.gesture.scale;
                         scaleEvent();
                         ev.preventDefault();
                     });
@@ -203,15 +203,23 @@ define(
                         ;
                 });
 
-                Mousetrap.bind('command+=', function(){
-                    scale *= 2;
+                self.on('zoomin', function(){
+                    self.scale *= 2;
                     scaleEvent();
+                });
+
+                self.on('zoomout', function(){
+                    self.scale *= 0.5;
+                    scaleEvent();
+                });
+
+                Mousetrap.bind('command+=', function(){
+                    self.emit('zoomin');
                     return false;
                 });
 
                 Mousetrap.bind('command+-', function(){
-                    scale *= 0.5;
-                    scaleEvent();
+                    self.emit('zoomout');
                     return false;
                 });
             },
@@ -323,8 +331,20 @@ define(
                             self.emit('refresh');
                         });
                     }
+                    // goto number
+                    ,'zoom to': 42
                 };
 
+                settings['zoom in'] = function(){
+                    self.emit('zoomin');
+                };
+                settings['zoom out'] = function(){
+                    self.emit('zoomout');
+                };
+                settings['zoom to selected number'] = function(){
+                    self.emit('goto', this.select);
+                };
+                
                 gui.remember(settings);
 
                 gui.add(settings, 'Layout', {
@@ -353,6 +373,15 @@ define(
                 gui.add(settings, 'connect');
 
                 gui.addColor(settings, 'highlight');
+
+                var nav = gui.addFolder('Navigation');
+
+                nav.add(settings, 'zoom in');
+                nav.add(settings, 'zoom out');
+                nav.add(settings, 'zoom to', 1).onChange(_.debounce(function( val ){
+                    self.emit('goto', val);
+                }, 100));
+                nav.open();
             },
 
             initStage: function(){
@@ -475,10 +504,32 @@ define(
                         ;
 
                     if ( num ){
+                        self.selectedNode = node;
                         num = num.replace(/^[^-]*-/, '');
                         selected.position( p );
                         self.$number.text( num );
                         mainLayer.draw();
+                    }
+                });
+
+                self.on('refresh-layout', function(){
+                    if ( self.selectedNode ){
+                        self.emit('clicked', self.selectedNode);
+                    }
+                });
+
+                self.on('goto', function( e, num ){
+                    var node = num && stage.find('#circle-'+num)
+                        ,pos
+                        ;
+                    if ( node && node.length ){
+                        node = node[0];
+                        pos = node.position();
+                        offset.x = pos.x;
+                        offset.y = pos.y;
+                        self.scale = scale = 2;
+                        self.emit('clicked', node);
+                        refresh();
                     }
                 });
 

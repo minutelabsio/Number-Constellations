@@ -52,7 +52,6 @@ html, body, #wrap-outer {
     left: 0;
     right: 0;
     height: 30%;
-    overflow: auto;
     padding: 2em;
     background: rgba(255, 255, 255, 0.8);
     border-top: 1px solid transparentize($deep-grey, 0.7);
@@ -61,6 +60,10 @@ html, body, #wrap-outer {
 
     .title {
         margin-top: 0;
+    }
+
+    .content {
+        overflow: auto;
     }
 
     .hide {
@@ -77,5 +80,17 @@ html, body, #wrap-outer {
             display: none;
         }
     }
+}
+
+#number-id {
+    position: absolute;
+    top: -85px;
+    right: 0;
+    font-size: 40px;
+    line-height: 1;
+    text-align: right;
+    padding: 22px 28px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
 }
 
