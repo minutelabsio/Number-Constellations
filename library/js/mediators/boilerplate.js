@@ -361,6 +361,7 @@ define(
                     ,'Carmichael': 'carmichael'
                     ,'Fibonacci Numbers': 'fibonaccis'
                     ,'Fibonacci Sums' : 'fibonacciSums'
+                    ,'Pythagorean Triples': 'pythTriples'
                     ,'Vampire Numbers': 'vampire'
                     ,'Largest Metadromes in base n': 'metadromes'
                     ,'Random': 'randoms'

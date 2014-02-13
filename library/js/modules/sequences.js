@@ -159,6 +159,36 @@ define(
             return arr;
         };
 
+        API.pythTriples = function( max ){
+
+            var max
+                ,m
+                ,n
+                ,t1
+                ,t2
+                ,t3
+                ,arr = []
+                ;
+                
+            // loop on m from 2 to max
+            for (m=2; m <= max; m++){
+                // now loop on n from 1 to m-1
+                for (n=1; n < m; n++){
+                    // evaluate and print triple
+                    if ( n*n > max ){ 
+                        max = 0;
+                        break;
+                    }
+                    t1 = m*m-n*n;
+                    t2 = 2*m*n;
+                    t3 = m*m+n*n;
+                    arr.push( t1, t2, t3 );
+                }
+            }
+
+            return _(arr).sortBy().uniq(true).valueOf();
+        };
+
         metadromes.shift(); // remove the leading zero
 
         API.vampire = vampire;
