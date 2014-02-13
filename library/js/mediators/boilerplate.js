@@ -91,6 +91,7 @@ define(
                 self.scale = 1;
                 self.setLayout = self.nonBlocking(self.setLayout);
                 self.highlightSequence = self.nonBlocking(self.highlightSequence);
+                self.clickCallback = self.clickCallback.bind(this);
 
                 $(function(){
                     self.resolve('domready');
@@ -103,6 +104,10 @@ define(
                 self.initEvents();
                 self.initStage();
                 self.initSettings();
+            },
+
+            clickCallback: function( e ){
+                this.emit('clicked', e.targetNode);
             },
 
             nonBlocking: function( fn, time ){
@@ -353,21 +358,20 @@ define(
             initStage: function(){
 
                 var self = this
-                    ,stage
-                    ,mainLayer
-                    ,mainGroup
+                    ,el = document.createElement('div')
+                    ,stage = self.stage = new Kinetic.Stage({ container: el })
+                    ,mainLayer = self.mainLayer = new Kinetic.Layer()
+                    ,mainGroup = self.mainGroup = new Kinetic.Group()
+                    ,panGroup = self.panGroup = new Kinetic.Group()
+                    ,selected
                     ,scale = self.scale
                     ,$win = $(window)
                     ,w = $win.width()
                     ,h = $win.height()
-                    ,offset = { x: -w/2, y: -h/2 }
-                    ,pos = { x: w/2/scale, y: h/2/scale }
-                    ,el = document.createElement('div')
+                    ,offset = { x: 0, y: 0 }
+                    ,pos = { x: 0, y: 0 }
                     ;
 
-                stage = self.stage = new Kinetic.Stage({ container: el });
-                mainLayer = self.mainLayer = new Kinetic.Layer();
-                mainGroup = self.mainGroup = new Kinetic.Group();
                 self.connectLine = new Kinetic.Line({
                     points: [0,0,100,100]
                     ,x: 0
@@ -375,46 +379,59 @@ define(
                     ,strokeWidth: 2
                 });
                 mainGroup.add( self.connectLine );
-                mainLayer.add( mainGroup );
+                panGroup.add( mainGroup );
+                mainLayer.add( panGroup );
                 stage.add( mainLayer );
+
+                selected = new Kinetic.Circle({
+                    x: 0
+                    ,y: 0
+                    ,radius: 10
+                    ,fill: false
+                    ,stroke: '#000'
+                    ,strokeWidth: 2
+                });
+
+                panGroup.add( selected );
                 
                 var cache = _.debounce(function(){
                     var invScale = 1/scale;
-                    pos.x += offset.x * invScale;
-                    pos.y += offset.y * invScale;
+                    
                     mainGroup.cache({
-                            x: pos.x,
-                            y: pos.y,
+                            x: 0,
+                            y: 0,
                             width: w,
                             height: h
                         })
-                        .offsetX( w/2 )
-                        .offsetY( h/2 )
-                        .scaleX( 1 * invScale )
-                        .scaleY( 1 * invScale )
+                        .offsetX( -offset.x*scale + w/2 )
+                        .offsetY( -offset.y*scale + h/2 )
+                        .scaleX( invScale )
+                        .scaleY( invScale )
                         ;
 
-                    offset.x = 0;
-                    offset.y = 0;
                     stage.draw();
                     self.emit('redraw');
                     self.emit( 'progress', false );
                 }, 400);
 
-                function refresh(){
+                function refresh( nocache ){
 
                     stage.setWidth( w );
                     stage.setHeight( h );
-                    mainGroup.offsetX( offset.x + w/2 );
-                    mainGroup.offsetY( offset.y + h/2 );
-                    mainLayer.offsetX( -w/2/scale );
-                    mainLayer.offsetY( -h/2/scale );
-                    mainLayer.scale({
+                    mainLayer.offsetX( -w/2 );
+                    mainLayer.offsetY( -h/2 );
+                    
+                    panGroup.offsetX( offset.x );
+                    panGroup.offsetY( offset.y );
+                    panGroup.scale({
                         x: scale,
                         y: scale
                     });
                     stage.batchDraw();
-                    cache();
+
+                    if ( nocache !== false ){
+                        cache();
+                    }
                 }
 
                 // window resizing
@@ -431,17 +448,19 @@ define(
 
                 self.on('movestart', function(){
                     var old = { x: offset.x, y: offset.y }
+                        ,sel = selected.offset()
                         ;
 
                     function off(){
+                        refresh();
                         self.off('moveend', off);
                         self.off('move', move);
                     }
 
                     function move( e, delta ){
-                        offset.x = ( old.x - delta.x );
-                        offset.y = ( old.y - delta.y );
-                        refresh();
+                        offset.x = ( old.x - delta.x/scale );
+                        offset.y = ( old.y - delta.y/scale );
+                        refresh( false );
                     }
 
                     self.on('moveend', off);
@@ -449,6 +468,19 @@ define(
                 });
 
                 self.on('refresh', refresh);
+
+                self.on('clicked', function( e, node ){
+                    var num = node.id()
+                        ,p = node.position()
+                        ;
+
+                    if ( num ){
+                        num = num.replace(/^[^-]*-/, '');
+                        selected.position( p );
+                        self.$number.text( num );
+                        mainLayer.draw();
+                    }
+                });
 
                 self.after('domready').then(function(){
 
@@ -502,8 +534,11 @@ define(
                             y: y,
                             width: size - 2,
                             height: size - 2,
-                            fill: '#ccc'
+                            fill: '#ccc',
+                            id: 'circle-' + (i + 1)
                         });
+
+                        symb.on('click tap', self.clickCallback);
 
                         self.markers.push( symb );
                         self.mainGroup.add( symb );
@@ -524,6 +559,7 @@ define(
                                 width: size,
                                 height: size,
                                 text: (i + 1) + '',
+                                id: 'text-' + (i + 1),
                                 fontSize: 12,
                                 fontFamily: 'monospace',
                                 fill: 'rgba(20, 20, 20, 0.5)',
@@ -533,6 +569,8 @@ define(
                                     y: (size - 8)/2
                                 }
                             });
+
+                            symb.on('click tap', self.clickCallback);
 
                             self.labels.push( symb );
                             self.mainGroup.add( symb );
@@ -655,8 +693,11 @@ define(
                 var self = this
                     ,$progress = $('#progress')
                     ;
+
                 self.$el = $('#canvas-wrap');
                 self.el = self.$el[0];
+
+                self.$number = $('#number-id');
 
                 self.on('progress', function( e, active ){
                     self.$el.toggleClass('loading', active);
