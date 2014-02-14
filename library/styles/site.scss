@@ -40,6 +40,10 @@ html, body, #wrap-outer {
 #canvas-wrap {
     cursor: move;
     line-height: 0;
+
+    &.loading {
+        cursor: wait;
+    }
 }
 
 #more-info {
@@ -47,16 +51,19 @@ html, body, #wrap-outer {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 30%;
-    overflow: auto;
+    height: 400px;
     padding: 2em;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.9);
     border-top: 1px solid transparentize($deep-grey, 0.7);
     color: $deep-grey;
     @include transition( height 0.3s ease );
 
     .title {
         margin-top: 0;
+    }
+
+    .content {
+        overflow: auto;
     }
 
     .hide {
@@ -73,5 +80,46 @@ html, body, #wrap-outer {
             display: none;
         }
     }
+
+    .tip {
+        position: absolute;
+        font-size: 12px;
+        top: -3em;
+        left: 0;
+        padding: 0.5em 1em;
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+    }
+
+    #what-is-this {
+        position: absolute;
+        top: 3.2em;
+        right: 1em;
+        display: none;
+    }
+
+    [id^="describe-"]{
+        display: none;
+    }
+
+    #back-to:after {
+        content: attr(data-about);
+    }
+
+    iframe {
+        width: 560px;
+    }
+}
+
+#number-id {
+    position: absolute;
+    top: -85px;
+    right: 0;
+    font-size: 40px;
+    line-height: 1;
+    text-align: right;
+    padding: 22px 28px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
 }
 

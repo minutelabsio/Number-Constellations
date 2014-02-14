@@ -39,12 +39,29 @@ define(
                 "Family": "primes",
                 "custom": "n^2",
                 "connect": false,
-                "highlight": "rgb(167, 42, 34)"
+                "highlight": "rgb(167, 42, 34)",
+                "zoom to": 1
               }
             }
           },
           "folders": {}
         };
+
+        var familyList = {
+            'Primes Numbers': 'primes'
+            ,'Carmichael': 'carmichael'
+            ,'Fibonacci Numbers': 'fibonaccis'
+            ,'Fibonacci Primes': 'fibonacciPrimes'
+            ,'Fibonacci Sums' : 'fibonacciSums'
+            ,'Pythagorean Triples': 'pythTriples'
+            ,'Vampire Numbers': 'vampire'
+            ,'Largest Metadromes in base n': 'metadromes'
+            ,'Random': 'randoms'
+            ,'Random (weighted)': 'randomsWeighted'
+            ,'Custom Function': 'custom'
+        };
+
+        var familyNames = _.invert( familyList );
 
         function sign( x ){
             return x >= 0 ? 1 : -1;
@@ -89,8 +106,13 @@ define(
                 self.maxScale = 20;
                 self.minScale = 0.01;
                 self.scale = 1;
+                self.offset = { x: 0, y: 0 };
+                self.selected = 1;
                 self.setLayout = self.nonBlocking(self.setLayout);
                 self.highlightSequence = self.nonBlocking(self.highlightSequence);
+                self.clickCallback = self.clickCallback.bind(this);
+
+                self.restoreHash();
 
                 $(function(){
                     self.resolve('domready');
@@ -105,6 +127,74 @@ define(
                 self.initSettings();
             },
 
+            restoreHash: function(){
+                var self = this
+                    ,hash = window.location.hash.substr(1)
+                    ;
+                // find settings
+                hash = hash.match(/settings=([^&]*)/);
+
+                if ( !hash || !hash.length ){
+                    return;
+                }
+
+                // decode
+                try {
+                    hash = window.atob(window.decodeURIComponent(hash[1]));
+                    hash = $.parseJSON(hash);
+                } catch( e ){
+                    return;
+                }
+
+                if ( !hash ){
+                    return;
+                }
+
+                if ( hash.gui ){
+                    self.guiSharePreset = hash.gui;
+                }
+
+                if ( hash.scale ){
+                    self.scale = hash.scale;
+                }
+
+                if ( hash.offset ){
+                    self.offset = hash.offset;
+                }
+
+                if ( hash.selected ){
+                    self.selected = hash.selected;
+                }
+            },
+
+            updateHash: function(){
+                var self = this
+                    ,obj = self.gui.getSaveObject()
+                    ,preset = obj.preset
+                    ,vals = obj.remembered[ preset ]
+                    ,hash = {
+                        gui: vals[0]
+                        ,scale: self.scale
+                        ,offset: self.offset
+                        ,selected: parseInt(self.$number.text())
+                    }
+                    ;
+                
+                window.location.hash = '#settings=' + window.encodeURIComponent(window.btoa(JSON.stringify(hash)));
+            },
+
+            getPresets: function(){
+                var self = this
+                    ,shared = self.guiSharePreset ? { preset: 'shared', remembered: { shared: {'0': self.guiSharePreset } } } : null
+                    ;
+                
+                return $.extend(true, {}, DEFAULTS, shared);
+            },
+
+            clickCallback: function( e ){
+                this.emit('clicked', e.targetNode);
+            },
+
             nonBlocking: function( fn, time ){
 
                 var self = this
@@ -113,7 +203,7 @@ define(
                     ,dfd
                     ;
 
-                time = time || 50;
+                time = time || 200;
 
                 cb = function( args ){
                     fn.apply( self, args );
@@ -121,7 +211,7 @@ define(
                         dfd.resolve();
                     }
                     dfd = false;
-                    self.emit( 'progress', false );
+                    // self.emit( 'progress', false );
                 };
 
                 complete = _.debounce(function(){
@@ -143,13 +233,12 @@ define(
             initEvents : function(){
 
                 var self = this
-                    ,scale = self.scale
                     ,lastScale
                     ;
 
                 function scaleEvent(){
-                    scale = Math.max(self.minScale, Math.min(self.maxScale, scale))
-                    self.emit('scale', scale);
+                    self.scale = Math.max(self.minScale, Math.min(self.maxScale, self.scale))
+                    self.emit('scale', self.scale);
                 }
 
                 self.after('domready').then(function(){
@@ -158,17 +247,17 @@ define(
 
                     hammertime.on('mousewheel', '#canvas-wrap', function( ev ) { 
                         var zoom = Math.min(Math.abs(ev.originalEvent.wheelDelta) / 50, 0.2) * sign(ev.originalEvent.wheelDelta);
-                        scale *= Math.pow(2, zoom);
+                        self.scale *= Math.pow(2, zoom);
                         scaleEvent();
                         ev.preventDefault();
                     });
 
                     hammertime.on('transformstart', '#canvas-wrap', function( ev ){
-                        lastScale = scale;
+                        lastScale = self.scale;
                     });
 
                     hammertime.on('transform', '#canvas-wrap', function( ev ){
-                        scale = lastScale * ev.gesture.scale;
+                        self.scale = lastScale * ev.gesture.scale;
                         scaleEvent();
                         ev.preventDefault();
                     });
@@ -188,35 +277,87 @@ define(
                         self.emit('moveend');
                     });
 
-                    hammertime.on('tap', '#more-info', function(){
+                    hammertime.on('tap', '#more-info', function( e ){
+                            e.preventDefault();
                             $(this).toggleClass('closed');
+                            return false;
                         })
-                        .on('tap', '#more-info .hide', function(){
+                        .on('tap', '#more-info .hide', function( e ){
+                            e.preventDefault();
                             $('#more-info').addClass('closed');
+                            return false;
+                        })
+                        .on('tap', '#what-is-this', function( e ){
+                            e.preventDefault();
+                            self.emit('describe', 'what');
+                            return false;
+                        })
+                        .on('tap', '#back-to', function( e ){
+                            e.preventDefault();
+                            self.emit('describe', familyList[$(this).attr('data-about')]);
                             return false;
                         })
                         ;
                 });
 
-                Mousetrap.bind('command+=', function(){
-                    scale *= 2;
+                self.on('zoomin', function(){
+                    self.scale *= 2;
                     scaleEvent();
+                });
+
+                self.on('zoomout', function(){
+                    self.scale *= 0.5;
+                    scaleEvent();
+                });
+
+                Mousetrap.bind('command+=', function(){
+                    self.emit('zoomin');
                     return false;
                 });
 
                 Mousetrap.bind('command+-', function(){
-                    scale *= 0.5;
-                    scaleEvent();
+                    self.emit('zoomout');
                     return false;
+                });
+
+                // one off
+                // highlight the selected node after
+                // first render
+                self.on('refresh-highlight', function( e ){
+                    var node = self.stage.find('#circle-'+self.selected)[0];
+                    self.emit('clicked', node);
+                    self.off(e.topic, e.handler);
+                });
+
+                self.on('hash', self.updateHash, self);
+
+                self.on('describe', function( e, type ){
+                    self.after('domready').then(function(){
+                        var $el = $('#describe-'+type);
+                        $('#what-is-this').toggle( type !== 'what' );
+                        if ( $el.length ){
+                            $('#more-info .content > div').hide();
+                            $el.show();
+                        }
+                        if ( type !== 'what' ){
+                            $('#back-to').attr('data-about', familyNames[type]);
+                        }
+                    });
                 });
             },
 
             initSettings: function(){
 
                 var self = this
-                    ,gui = new dat.GUI({ load: DEFAULTS })
+                    ,gui = new dat.GUI({ load: self.getPresets() })
                     ,settings
+                    ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
+                    ,updateHash = function(){
+                        self.emit('hash');
+                    }
                     ;
+
+                self.gui = gui;
 
                 settings = {
                     _layout: 'ulamSpiral'
@@ -232,7 +373,9 @@ define(
                         this.refreshSequence();
                         self.sequence = this._familyArr;
                         self.setLayout( this._layoutArr ).then(function(){
-                            self.highlightSequence( true, color, con );
+                            return self.highlightSequence( true, color, con );
+                        }).then(function(){
+                            self.emit('refresh');
                         });
                     }
                     ,_limit: 10000
@@ -255,7 +398,10 @@ define(
                     ,set Family( val ){
                         this._family = val;
                         this.refreshSequence();
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                        self.emit('describe', val);
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
                     }
                     ,refreshSequence: function(){
                         var val = this._family;
@@ -265,6 +411,10 @@ define(
                             } catch ( e ){
                                 return;
                             }
+                        } else if ( val === 'randomsWeighted' ){
+
+                            this._familyArr = _.times( this._limit, Math.random );
+
                         } else {
                             var fn = Sequences[ val ];
                             if ( _.isFunction( fn ) ){
@@ -273,6 +423,8 @@ define(
                                 this._familyArr = fn;
                             }
                         }
+                        
+                        this._weighted = (_.indexOf(weightedSeqs, val) > -1);
                     }
                     // custom
                     ,_custom: 'n^2'
@@ -292,7 +444,9 @@ define(
                     }
                     ,set connect( val ){
                         this._connect = val;
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
                     }
                     // highlight color
                     ,_highlight: '#a33'
@@ -301,10 +455,24 @@ define(
                     }
                     ,set highlight ( val ){
                         this._highlight = val;
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect );
+                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
                     }
+                    // goto number
+                    ,'zoom to': 42
                 };
 
+                settings['zoom in'] = function(){
+                    self.emit('zoomin');
+                };
+                settings['zoom out'] = function(){
+                    self.emit('zoomout');
+                };
+                settings['zoom to selected number'] = function(){
+                    self.emit('goto', this.select);
+                };
+                
                 gui.remember(settings);
 
                 gui.add(settings, 'Layout', {
@@ -312,42 +480,44 @@ define(
                     ,'Ulam Spiral': 'ulamSpiral'
                     ,'Sacks Spiral': 'sacksSpiral'
                     ,'Vogel Spiral': 'vogelSpiral'
-                });
+                }).onChange(updateHash);
 
-                gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]);
+                gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]).onChange(updateHash);
 
-                gui.add(settings, 'Family', {
-                    'Primes': 'primes'
-                    ,'Fibonacci Numbers': 'fibonaccis'
-                    ,'Vampire Numbers': 'vampire'
-                    ,'Custom Function': 'custom'
-                });
+                gui.add(settings, 'Family', familyList).onChange(updateHash);
 
-                gui.add(settings, 'custom');
+                gui.add(settings, 'custom').onChange(updateHash);
 
-                gui.add(settings, 'connect');
+                gui.add(settings, 'connect').onChange(updateHash);
 
-                gui.addColor(settings, 'highlight');
+                gui.addColor(settings, 'highlight').onChange(updateHash);
+
+                var nav = gui.addFolder('Navigation');
+
+                nav.add(settings, 'zoom in');
+                nav.add(settings, 'zoom out');
+                nav.add(settings, 'zoom to', 1).onChange(_.debounce(function( val ){
+                    self.emit('goto', val);
+                }, 100));
+                nav.open();
             },
 
             initStage: function(){
 
                 var self = this
-                    ,stage
-                    ,mainLayer
-                    ,mainGroup
+                    ,el = document.createElement('div')
+                    ,stage = self.stage = new Kinetic.Stage({ container: el })
+                    ,mainLayer = self.mainLayer = new Kinetic.Layer()
+                    ,mainGroup = self.mainGroup = new Kinetic.Group()
+                    ,panGroup = self.panGroup = new Kinetic.Group()
+                    ,selected
                     ,scale = self.scale
                     ,$win = $(window)
                     ,w = $win.width()
                     ,h = $win.height()
-                    ,offset = { x: -w/2, y: -h/2 }
-                    ,pos = { x: w/2/scale, y: h/2/scale }
-                    ,el = document.createElement('div')
+                    ,offset = self.offset
                     ;
 
-                stage = self.stage = new Kinetic.Stage({ container: el });
-                mainLayer = self.mainLayer = new Kinetic.Layer();
-                mainGroup = self.mainGroup = new Kinetic.Group();
                 self.connectLine = new Kinetic.Line({
                     points: [0,0,100,100]
                     ,x: 0
@@ -355,45 +525,60 @@ define(
                     ,strokeWidth: 2
                 });
                 mainGroup.add( self.connectLine );
-                mainLayer.add( mainGroup );
+                panGroup.add( mainGroup );
+                mainLayer.add( panGroup );
                 stage.add( mainLayer );
+
+                selected = new Kinetic.Circle({
+                    x: 0
+                    ,y: 0
+                    ,radius: 10
+                    ,fill: false
+                    ,stroke: '#000'
+                    ,strokeWidth: 2
+                });
+
+                panGroup.add( selected );
                 
                 var cache = _.debounce(function(){
                     var invScale = 1/scale;
-                    pos.x += offset.x * invScale;
-                    pos.y += offset.y * invScale;
+                    
                     mainGroup.cache({
-                            x: pos.x,
-                            y: pos.y,
+                            x: 0,
+                            y: 0,
                             width: w,
                             height: h
                         })
-                        .offsetX( w/2 )
-                        .offsetY( h/2 )
-                        .scaleX( 1 * invScale )
-                        .scaleY( 1 * invScale )
+                        .offsetX( -offset.x*scale + w/2 )
+                        .offsetY( -offset.y*scale + h/2 )
+                        .scaleX( invScale )
+                        .scaleY( invScale )
                         ;
 
-                    offset.x = 0;
-                    offset.y = 0;
-                    
-                    self.emit('redraw');
+                    stage.draw();
+                    self.emit( 'redraw' );
+                    self.emit( 'progress', false );
+                    self.emit( 'hash' );
                 }, 400);
 
-                function refresh(){
+                function refresh( nocache ){
 
                     stage.setWidth( w );
                     stage.setHeight( h );
-                    mainGroup.offsetX( offset.x + w/2 );
-                    mainGroup.offsetY( offset.y + h/2 );
-                    mainLayer.offsetX( -w/2/scale );
-                    mainLayer.offsetY( -h/2/scale );
-                    mainLayer.scale({
+                    mainLayer.offsetX( -w/2 );
+                    mainLayer.offsetY( -h/2 );
+                    
+                    panGroup.offsetX( offset.x );
+                    panGroup.offsetY( offset.y );
+                    panGroup.scale({
                         x: scale,
                         y: scale
                     });
                     stage.batchDraw();
-                    cache();
+
+                    if ( nocache !== false ){
+                        cache();
+                    }
                 }
 
                 // window resizing
@@ -410,21 +595,61 @@ define(
 
                 self.on('movestart', function(){
                     var old = { x: offset.x, y: offset.y }
+                        ,sel = selected.offset()
                         ;
 
                     function off(){
+                        refresh();
                         self.off('moveend', off);
                         self.off('move', move);
                     }
 
                     function move( e, delta ){
-                        offset.x = ( old.x - delta.x );
-                        offset.y = ( old.y - delta.y );
-                        refresh();
+                        offset.x = ( old.x - delta.x/scale );
+                        offset.y = ( old.y - delta.y/scale );
+                        refresh( false );
                     }
 
                     self.on('moveend', off);
                     self.on('move', move);
+                });
+
+                self.on('refresh', refresh);
+
+                self.on('clicked', function( e, node ){
+                    var num = node.id()
+                        ,p = node.position()
+                        ;
+
+                    if ( num ){
+                        self.selectedNode = node;
+                        num = num.replace(/^[^-]*-/, '');
+                        selected.position( p );
+                        self.$number.text( num );
+                        mainLayer.draw();
+                        self.emit( 'hash' );
+                    }
+                });
+
+                self.on('refresh-layout', function(){
+                    if ( self.selectedNode ){
+                        self.emit('clicked', self.selectedNode);
+                    }
+                });
+
+                self.on('goto', function( e, num ){
+                    var node = num && stage.find('#circle-'+num)
+                        ,pos
+                        ;
+                    if ( node && node.length ){
+                        node = node[0];
+                        pos = node.position();
+                        offset.x = pos.x;
+                        offset.y = pos.y;
+                        self.scale = scale = 2;
+                        self.emit('clicked', node);
+                        refresh();
+                    }
                 });
 
                 self.after('domready').then(function(){
@@ -432,8 +657,6 @@ define(
                     self.$el.append( el );
                     $win.trigger('resize');
                 });
-
-                self.on('refresh-highlight', refresh);
             },
 
             setLayout: function( layout ){
@@ -481,8 +704,11 @@ define(
                             y: y,
                             width: size - 2,
                             height: size - 2,
-                            fill: '#ccc'
+                            fill: '#ccc',
+                            id: 'circle-' + (i + 1)
                         });
+
+                        symb.on('click tap', self.clickCallback);
 
                         self.markers.push( symb );
                         self.mainGroup.add( symb );
@@ -503,6 +729,7 @@ define(
                                 width: size,
                                 height: size,
                                 text: (i + 1) + '',
+                                id: 'text-' + (i + 1),
                                 fontSize: 12,
                                 fontFamily: 'monospace',
                                 fill: 'rgba(20, 20, 20, 0.5)',
@@ -512,6 +739,8 @@ define(
                                     y: (size - 8)/2
                                 }
                             });
+
+                            symb.on('click tap', self.clickCallback);
 
                             self.labels.push( symb );
                             self.mainGroup.add( symb );
@@ -529,7 +758,7 @@ define(
                 self.emit('refresh-layout');
             },
 
-            highlightSequence: function( seq, color, connect ){
+            highlightSequence: function( seq, color, connect, weighted ){
 
                 var self = this
                     ,markers = this.markers
@@ -537,6 +766,7 @@ define(
                     ,pos
                     ,i
                     ,l
+                    ,w
                     ,line = []
                     ;
 
@@ -552,17 +782,22 @@ define(
                 if ( self.sequence && seq !== self.sequence ){
                     // reset the colors to default
                     for ( i = 0, l = markers.length; i < l; ++i ){
-                        markers[ i ].fill( '#ccc' );
+                        markers[ i ]
+                            .fill( '#ccc' )
+                            .opacity( 1 )
+                            ;
                     }
                 }
 
                 if ( seq === true ){
                     // force refresh with same values
                     seq = self.sequence;
+                    weighted = self.weighted;
                     color = color || self.highlightColor;
                     connect = self.connectLine.visible();
                 } else {
                     self.sequence = seq;
+                    self.weighted = weighted;
                     self.highlightColor = color || '#a33';
                     self.connectLine.visible( !!connect );
                 }
@@ -572,29 +807,49 @@ define(
                     return;
                 }
 
-                for ( i = 0, l = seq.length; i < l; ++i ){
+                if ( weighted ){
+                    w = 1 / _.max(seq);
+                    // highlight by weight
+                    for ( i = 0, l = seq.length; i < l; ++i ){
                     
-                    pos = seq[ i ] - 1;
-                    m = markers[ pos ];
-                    if ( !m ){
-                        break;
+                        pos = seq[ i ]; // weight
+                        m = markers[ i ];
+                        if ( !m ){
+                            break;
+                        }
+
+                        m.fill( color );
+                        m.opacity( pos * w );
                     }
 
-                    m.fill( color );
-                    if ( connect ){
-                        line.push( m.x(), m.y() );
+                    self.connectLine.points( [] );
+
+                } else {
+                    // highlight the numbers in the sequence
+                    for ( i = 0, l = seq.length; i < l; ++i ){
+                        
+                        pos = seq[ i ] - 1;
+                        m = markers[ pos ];
+                        if ( !m ){
+                            break;
+                        }
+
+                        m.fill( color );
+                        if ( connect ){
+                            line.push( m.x(), m.y() );
+                        }
                     }
+
+                    self.connectLine
+                        .points( line )
+                        .stroke( self.highlightColor )
+                        .moveToTop()
+                        ;
+
+                    _.each(self.labels, function( node ){
+                        node.moveToTop();
+                    });
                 }
-
-                self.connectLine
-                    .points( line )
-                    .stroke( self.highlightColor )
-                    .moveToTop()
-                    ;
-
-                _.each(self.labels, function( node ){
-                    node.moveToTop();
-                });
 
                 self.emit('refresh-highlight');
             },
@@ -608,10 +863,14 @@ define(
                 var self = this
                     ,$progress = $('#progress')
                     ;
+
                 self.$el = $('#canvas-wrap');
                 self.el = self.$el[0];
 
+                self.$number = $('#number-id');
+
                 self.on('progress', function( e, active ){
+                    self.$el.toggleClass('loading', active);
                     $progress.toggle( active );
                 });
 
