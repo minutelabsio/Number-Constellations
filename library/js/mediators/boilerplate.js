@@ -90,9 +90,13 @@ define(
                 self.maxScale = 20;
                 self.minScale = 0.01;
                 self.scale = 1;
+                self.offset = { x: 0, y: 0 };
+                self.selected = 1;
                 self.setLayout = self.nonBlocking(self.setLayout);
                 self.highlightSequence = self.nonBlocking(self.highlightSequence);
                 self.clickCallback = self.clickCallback.bind(this);
+
+                self.restoreHash();
 
                 $(function(){
                     self.resolve('domready');
@@ -105,6 +109,70 @@ define(
                 self.initEvents();
                 self.initStage();
                 self.initSettings();
+            },
+
+            restoreHash: function(){
+                var self = this
+                    ,hash = window.location.hash.substr(1)
+                    ;
+                // find settings
+                hash = hash.match(/settings=([^&]*)/);
+
+                if ( !hash || !hash.length ){
+                    return;
+                }
+
+                // decode
+                try {
+                    hash = window.atob(window.decodeURIComponent(hash[1]));
+                    hash = $.parseJSON(hash);
+                } catch( e ){
+                    return;
+                }
+
+                if ( !hash ){
+                    return;
+                }
+
+                if ( hash.gui ){
+                    self.guiSharePreset = hash.gui;
+                }
+
+                if ( hash.scale ){
+                    self.scale = hash.scale;
+                }
+
+                if ( hash.offset ){
+                    self.offset = hash.offset;
+                }
+
+                if ( hash.selected ){
+                    self.selected = hash.selected;
+                }
+            },
+
+            updateHash: function(){
+                var self = this
+                    ,obj = self.gui.getSaveObject()
+                    ,preset = obj.preset
+                    ,vals = obj.remembered[ preset ]
+                    ,hash = {
+                        gui: vals[0]
+                        ,scale: self.scale
+                        ,offset: self.offset
+                        ,selected: parseInt(self.$number.text())
+                    }
+                    ;
+                
+                window.location.hash = '#settings=' + window.encodeURIComponent(window.btoa(JSON.stringify(hash)));
+            },
+
+            getPresets: function(){
+                var self = this
+                    ,shared = self.guiSharePreset ? { preset: 'shared', remembered: { shared: {'0': self.guiSharePreset } } } : null
+                    ;
+                
+                return $.extend(true, {}, DEFAULTS, shared);
             },
 
             clickCallback: function( e ){
@@ -222,15 +290,31 @@ define(
                     self.emit('zoomout');
                     return false;
                 });
+
+                // one off
+                // highlight the selected node after
+                // first render
+                self.on('refresh-highlight', function( e ){
+                    var node = self.stage.find('#circle-'+self.selected)[0];
+                    self.emit('clicked', node);
+                    self.off(e.topic, e.handler);
+                });
+
+                self.on('hash', self.updateHash, self);
             },
 
             initSettings: function(){
 
                 var self = this
-                    ,gui = new dat.GUI({ load: DEFAULTS })
+                    ,gui = new dat.GUI({ load: self.getPresets() })
                     ,settings
                     ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
+                    ,updateHash = function(){
+                        self.emit('hash');
+                    }
                     ;
+
+                self.gui = gui;
 
                 settings = {
                     _layout: 'ulamSpiral'
@@ -352,9 +436,9 @@ define(
                     ,'Ulam Spiral': 'ulamSpiral'
                     ,'Sacks Spiral': 'sacksSpiral'
                     ,'Vogel Spiral': 'vogelSpiral'
-                });
+                }).onChange(updateHash);
 
-                gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]);
+                gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]).onChange(updateHash);
 
                 gui.add(settings, 'Family', {
                     'Primes': 'primes'
@@ -367,13 +451,13 @@ define(
                     ,'Random': 'randoms'
                     ,'Random (weighted)': 'randomsWeighted'
                     ,'Custom Function': 'custom'
-                });
+                }).onChange(updateHash);
 
-                gui.add(settings, 'custom');
+                gui.add(settings, 'custom').onChange(updateHash);
 
-                gui.add(settings, 'connect');
+                gui.add(settings, 'connect').onChange(updateHash);
 
-                gui.addColor(settings, 'highlight');
+                gui.addColor(settings, 'highlight').onChange(updateHash);
 
                 var nav = gui.addFolder('Navigation');
 
@@ -398,8 +482,7 @@ define(
                     ,$win = $(window)
                     ,w = $win.width()
                     ,h = $win.height()
-                    ,offset = { x: 0, y: 0 }
-                    ,pos = { x: 0, y: 0 }
+                    ,offset = self.offset
                     ;
 
                 self.connectLine = new Kinetic.Line({
@@ -440,8 +523,9 @@ define(
                         ;
 
                     stage.draw();
-                    self.emit('redraw');
+                    self.emit( 'redraw' );
                     self.emit( 'progress', false );
+                    self.emit( 'hash' );
                 }, 400);
 
                 function refresh( nocache ){
@@ -510,6 +594,7 @@ define(
                         selected.position( p );
                         self.$number.text( num );
                         mainLayer.draw();
+                        self.emit( 'hash' );
                     }
                 });
 
