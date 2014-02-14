@@ -7,13 +7,15 @@ define(
         'lodash',
         'json!data/vampire.json',
         'json!data/carmichael.json',
-        'json!data/metadromes.json'
+        'json!data/metadromes.json',
+        'json!data/fibonacci-primes.json'
     ],
     function(
         _,
         vampire,
         carmichael,
-        metadromes
+        metadromes,
+        fibonacciPrimes
     ){
         /**
          * NOTE: all sums start at n = 1, not zero because we don't plot zero
@@ -194,6 +196,7 @@ define(
         API.vampire = vampire;
         API.carmichael = carmichael;
         API.metadromes = metadromes;
+        API.fibonacciPrimes = fibonacciPrimes;
 
         return API;
     }

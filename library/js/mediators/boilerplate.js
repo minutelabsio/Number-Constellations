@@ -47,6 +47,22 @@ define(
           "folders": {}
         };
 
+        var familyList = {
+            'Primes Numbers': 'primes'
+            ,'Carmichael': 'carmichael'
+            ,'Fibonacci Numbers': 'fibonaccis'
+            ,'Fibonacci Primes': 'fibonacciPrimes'
+            ,'Fibonacci Sums' : 'fibonacciSums'
+            ,'Pythagorean Triples': 'pythTriples'
+            ,'Vampire Numbers': 'vampire'
+            ,'Largest Metadromes in base n': 'metadromes'
+            ,'Random': 'randoms'
+            ,'Random (weighted)': 'randomsWeighted'
+            ,'Custom Function': 'custom'
+        };
+
+        var familyNames = _.invert( familyList );
+
         function sign( x ){
             return x >= 0 ? 1 : -1;
         }
@@ -261,11 +277,24 @@ define(
                         self.emit('moveend');
                     });
 
-                    hammertime.on('tap', '#more-info', function(){
+                    hammertime.on('tap', '#more-info', function( e ){
+                            e.preventDefault();
                             $(this).toggleClass('closed');
+                            return false;
                         })
-                        .on('tap', '#more-info .hide', function(){
+                        .on('tap', '#more-info .hide', function( e ){
+                            e.preventDefault();
                             $('#more-info').addClass('closed');
+                            return false;
+                        })
+                        .on('tap', '#what-is-this', function( e ){
+                            e.preventDefault();
+                            self.emit('describe', 'what');
+                            return false;
+                        })
+                        .on('tap', '#back-to', function( e ){
+                            e.preventDefault();
+                            self.emit('describe', familyList[$(this).attr('data-about')]);
                             return false;
                         })
                         ;
@@ -301,6 +330,20 @@ define(
                 });
 
                 self.on('hash', self.updateHash, self);
+
+                self.on('describe', function( e, type ){
+                    self.after('domready').then(function(){
+                        var $el = $('#describe-'+type);
+                        $('#what-is-this').toggle( type !== 'what' );
+                        if ( $el.length ){
+                            $('#more-info .content > div').hide();
+                            $el.show();
+                        }
+                        if ( type !== 'what' ){
+                            $('#back-to').attr('data-about', familyNames[type]);
+                        }
+                    });
+                });
             },
 
             initSettings: function(){
@@ -355,6 +398,7 @@ define(
                     ,set Family( val ){
                         this._family = val;
                         this.refreshSequence();
+                        self.emit('describe', val);
                         self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
                             self.emit('refresh');
                         });
@@ -440,18 +484,7 @@ define(
 
                 gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]).onChange(updateHash);
 
-                gui.add(settings, 'Family', {
-                    'Primes': 'primes'
-                    ,'Carmichael': 'carmichael'
-                    ,'Fibonacci Numbers': 'fibonaccis'
-                    ,'Fibonacci Sums' : 'fibonacciSums'
-                    ,'Pythagorean Triples': 'pythTriples'
-                    ,'Vampire Numbers': 'vampire'
-                    ,'Largest Metadromes in base n': 'metadromes'
-                    ,'Random': 'randoms'
-                    ,'Random (weighted)': 'randomsWeighted'
-                    ,'Custom Function': 'custom'
-                }).onChange(updateHash);
+                gui.add(settings, 'Family', familyList).onChange(updateHash);
 
                 gui.add(settings, 'custom').onChange(updateHash);
 
