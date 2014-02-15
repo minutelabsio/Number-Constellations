@@ -63,7 +63,8 @@ html, body, #wrap-outer {
     }
 
     .content {
-        overflow: auto;
+        height: 100%;
+        overflow: hidden;
     }
 
     .hide {
