@@ -51,8 +51,8 @@ html, body, #wrap-outer {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 400px;
-    padding: 2em;
+    height: 440px;
+    padding: 2em 2em 0;
     background: rgba(255, 255, 255, 0.9);
     border-top: 1px solid transparentize($deep-grey, 0.7);
     color: $deep-grey;
@@ -75,7 +75,7 @@ html, body, #wrap-outer {
 
     &.closed {
         cursor: pointer;
-        height: 2em;
+        height: 4em;
 
         .hide {
             display: none;
