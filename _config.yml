@@ -4,7 +4,7 @@ exclude: ["README.md", "CNAME", "LICENSE", "build", "config.rb", "Gruntfile.js",
 
 title : "Number Constellations"
 id : "/DATE/TITLE" # changeme
-description : "Short description" # changeme
+description : "See amazing patterns emerge when number spirals are highlighted in different ways"
 thumb: "http://minutelabs.io/assets/THUMB_IMAGE" # changeme
 version: "0.0.1"
 
