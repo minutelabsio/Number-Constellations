@@ -56,8 +56,8 @@ html, body, #wrap-outer {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 400px;
-  padding: 2em;
+  height: 440px;
+  padding: 2em 2em 0;
   background: rgba(255, 255, 255, 0.9);
   border-top: 1px solid rgba(67, 67, 67, 0.3);
   color: #434343;
@@ -84,7 +84,7 @@ html, body, #wrap-outer {
 /* line 76, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info.closed {
   cursor: pointer;
-  height: 2em;
+  height: 4em;
 }
 /* line 80, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info.closed .hide {
