@@ -53,6 +53,7 @@ define(
             ,'Fibonacci Numbers': 'fibonaccis'
             ,'Fibonacci Primes': 'fibonacciPrimes'
             ,'Fibonacci Sums' : 'fibonacciSums'
+            ,'Pythagorean Primes': 'pythPrimes'
             ,'Pythagorean Triples': 'pythTriples'
             ,'Vampire Numbers': 'vampire'
             ,'Largest Metadromes in base n': 'metadromes'
@@ -298,6 +299,8 @@ define(
                             return false;
                         })
                         ;
+
+                    self.on('hash', self.updateHash, self);
                 });
 
                 self.on('zoomin', function(){
@@ -328,8 +331,6 @@ define(
                     self.emit('clicked', node);
                     self.off(e.topic, e.handler);
                 });
-
-                self.on('hash', self.updateHash, self);
 
                 self.on('describe', function( e, type ){
                     self.after('domready').then(function(){
@@ -409,6 +410,7 @@ define(
                             try {
                                 this._familyArr = _.times( this._limit, mathParse( this._custom ) );
                             } catch ( e ){
+                                this._familyArr = [];
                                 return;
                             }
                         } else if ( val === 'randomsWeighted' ){
@@ -625,9 +627,12 @@ define(
                         self.selectedNode = node;
                         num = num.replace(/^[^-]*-/, '');
                         selected.position( p );
-                        self.$number.text( num );
                         mainLayer.draw();
                         self.emit( 'hash' );
+
+                        self.after('domready').then(function(){
+                            self.$number.text( num );
+                        });
                     }
                 });
 

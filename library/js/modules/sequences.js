@@ -17,6 +17,7 @@ define(
         metadromes,
         fibonacciPrimes
     ){
+        'use strict';
         /**
          * NOTE: all sums start at n = 1, not zero because we don't plot zero
          * on the spirals
@@ -163,8 +164,7 @@ define(
 
         API.pythTriples = function( max ){
 
-            var max
-                ,m
+            var m
                 ,n
                 ,t1
                 ,t2
@@ -191,9 +191,16 @@ define(
             return _(arr).sortBy().uniq(true).valueOf();
         };
 
+        API.pythPrimes = function( max ){
+
+            return _.filter(API.primes( max ), function( n ){
+                return ((n - 1) % 4 === 0);
+            });
+        };
+
         metadromes.shift(); // remove the leading zero
 
-        API.vampire = vampire;
+        API.vampire = _.sortBy(vampire);
         API.carmichael = carmichael;
         API.metadromes = metadromes;
         API.fibonacciPrimes = fibonacciPrimes;
