@@ -279,9 +279,7 @@ define(
                     });
 
                     hammertime.on('tap', '#more-info', function( e ){
-                            e.preventDefault();
                             $(this).toggleClass('closed');
-                            return false;
                         })
                         .on('tap', '#more-info .hide', function( e ){
                             e.preventDefault();
@@ -290,6 +288,7 @@ define(
                         })
                         .on('tap', '#what-is-this', function( e ){
                             e.preventDefault();
+                            $('#more-info').removeClass('closed');
                             self.emit('describe', 'what');
                             return false;
                         })

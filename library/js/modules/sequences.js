@@ -147,16 +147,17 @@ define(
             max = max || this.maxSeqLength;
 
             var n = 0
-                ,v = rndInt( 10 )
-                ,arr = [ v ]
+                ,arr = []
                 ;
 
             // if byIndex, then we get the numbers up to the index "max"
             // otherwise we get the number value nearest "max"
-            while ( v < max ){
-                v = arr[ n ] + rndInt( 10 );
-                arr.push( v );
+            while ( n < max ){
                 n++;
+
+                if ( Math.random() > 0.5 ){
+                    arr.push( n );
+                }
             }
 
             return arr;

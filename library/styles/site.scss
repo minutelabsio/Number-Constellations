@@ -92,12 +92,20 @@ html, body, #wrap-outer {
 
     .tip {
         position: absolute;
-        font-size: 12px;
+        font-size: 13px;
         top: -3em;
         left: 0;
         padding: 0.5em 1em;
         background: rgba(0, 0, 0, 0.9);
         color: #fff;
+
+        i {
+            position: relative;
+            top: 0.25em;
+            font-size: 1.8em;
+            padding: 0 0.1em;
+            line-height: 0;
+        }
     }
 
     #what-is-this {
