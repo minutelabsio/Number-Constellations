@@ -7,8 +7,16 @@ html, body, #wrap-outer {
 .dg input {
   line-height: 1.4;
 }
+/* line 14, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+.dg .save-row {
+  display: none;
+}
+/* line 18, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+.dg.main.a.has-save > ul {
+  margin-top: 0;
+}
 
-/* line 15, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 23, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #progress {
   position: absolute;
   top: 50%;
@@ -27,30 +35,30 @@ html, body, #wrap-outer {
   -o-border-radius: 5px;
   border-radius: 5px;
 }
-/* line 27, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 35, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #progress img {
   display: block;
   width: 120px;
   margin: auto;
 }
-/* line 33, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 41, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #progress:after {
   content: 'working...';
   display: block;
   text-align: center;
 }
 
-/* line 40, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 48, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #canvas-wrap {
   cursor: move;
   line-height: 0;
 }
-/* line 44, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 52, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #canvas-wrap.loading {
   cursor: wait;
 }
 
-/* line 49, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 57, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info {
   position: absolute;
   bottom: 0;
@@ -66,61 +74,69 @@ html, body, #wrap-outer {
   -o-transition: height 0.3s ease;
   transition: height 0.3s ease;
 }
-/* line 61, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 69, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info .title {
   margin-top: 0;
 }
-/* line 65, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 73, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info .content {
   height: 100%;
   overflow: hidden;
 }
-/* line 70, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 78, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info .hide {
   position: absolute;
   top: 1em;
   right: 1em;
 }
-/* line 76, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 84, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info.closed {
   cursor: pointer;
   height: 4em;
 }
-/* line 80, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 88, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info.closed .hide {
   display: none;
 }
-/* line 85, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 93, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info .tip {
   position: absolute;
-  font-size: 12px;
+  font-size: 13px;
   top: -3em;
   left: 0;
   padding: 0.5em 1em;
   background: rgba(0, 0, 0, 0.9);
   color: #fff;
 }
-/* line 95, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 102, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+#more-info .tip i {
+  position: relative;
+  top: 0.25em;
+  font-size: 1.8em;
+  padding: 0 0.1em;
+  line-height: 0;
+}
+/* line 111, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info #what-is-this {
   position: absolute;
   top: 3.2em;
   right: 1em;
   display: none;
 }
-/* line 102, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 118, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info [id^="describe-"] {
   display: none;
 }
-/* line 106, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 122, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info #back-to:after {
   content: attr(data-about);
 }
-/* line 110, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 126, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #more-info iframe {
   width: 560px;
 }
 
-/* line 115, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
+/* line 131, /Users/wellcaffeinated/Documents/github/minutelabs/Number-Constellations/library/styles/site.scss */
 #number-id {
   position: absolute;
   top: -85px;

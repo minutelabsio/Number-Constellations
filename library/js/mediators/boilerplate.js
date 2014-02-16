@@ -186,10 +186,10 @@ define(
 
             getPresets: function(){
                 var self = this
-                    ,shared = self.guiSharePreset ? { preset: 'shared', remembered: { shared: {'0': self.guiSharePreset } } } : null
+                    ,shared = self.guiSharePreset ? { remembered: { shared: {'0': self.guiSharePreset } } } : null
                     ;
                 
-                return $.extend(true, {}, DEFAULTS, shared);
+                return { load: $.extend(true, {}, DEFAULTS, shared), preset: self.guiSharePreset ? 'shared' : 'Default' };
             },
 
             clickCallback: function( e ){
@@ -279,9 +279,7 @@ define(
                     });
 
                     hammertime.on('tap', '#more-info', function( e ){
-                            e.preventDefault();
                             $(this).toggleClass('closed');
-                            return false;
                         })
                         .on('tap', '#more-info .hide', function( e ){
                             e.preventDefault();
@@ -290,6 +288,7 @@ define(
                         })
                         .on('tap', '#what-is-this', function( e ){
                             e.preventDefault();
+                            $('#more-info').removeClass('closed');
                             self.emit('describe', 'what');
                             return false;
                         })
@@ -313,12 +312,14 @@ define(
                     scaleEvent();
                 });
 
-                Mousetrap.bind('command+=', function(){
+                Mousetrap.bind('command+=', function( e ){
+                    e.preventDefault();
                     self.emit('zoomin');
                     return false;
                 });
 
-                Mousetrap.bind('command+-', function(){
+                Mousetrap.bind('command+-', function( e ){
+                    e.preventDefault();
                     self.emit('zoomout');
                     return false;
                 });
@@ -350,12 +351,23 @@ define(
             initSettings: function(){
 
                 var self = this
-                    ,gui = new dat.GUI({ load: self.getPresets() })
+                    ,gui = new dat.GUI( self.getPresets() )
                     ,settings
                     ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
                     ,updateHash = function(){
                         self.emit('hash');
                     }
+                    ,refresh = _.debounce(function(){
+                        settings.refreshSequence();
+                        self.emit('describe', settings._family);
+                        self.highlightSequence( settings._familyArr, settings._highlight, settings._connect, settings._weighted ).then(function(){
+                            self.emit('refresh');
+                        });
+                    }, 200)
+                    ,setFam
+                    ,fam
+                    ,cust
+                    ,allowcustom = false
                     ;
 
                 self.gui = gui;
@@ -398,17 +410,14 @@ define(
                     }
                     ,set Family( val ){
                         this._family = val;
-                        this.refreshSequence();
-                        self.emit('describe', val);
-                        self.highlightSequence( this._familyArr, this._highlight, this._connect, this._weighted ).then(function(){
-                            self.emit('refresh');
-                        });
+                        refresh();
                     }
                     ,refreshSequence: function(){
                         var val = this._family;
                         if ( val === 'custom' ){
                             try {
                                 this._familyArr = _.times( this._limit, mathParse( this._custom ) );
+                                this._familyArr = _(this._familyArr).sortBy().uniq( true ).reject(function( n ){ return n < 1 }).valueOf();
                             } catch ( e ){
                                 this._familyArr = [];
                                 return;
@@ -435,9 +444,7 @@ define(
                     }
                     ,set custom( val ){
                         this._custom = val;
-                        if ( this.Family === 'custom' ){
-                            this.Family = this.Family;
-                        }
+                        setFam();
                     }
                     // connect the dots?
                     ,_connect: false
@@ -465,6 +472,10 @@ define(
                     ,'zoom to': 42
                 };
 
+                setFam = _.debounce(function(){
+                    settings.Family = settings.Family;
+                }, 800);
+
                 settings['zoom in'] = function(){
                     self.emit('zoomin');
                 };
@@ -486,9 +497,15 @@ define(
 
                 gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]).onChange(updateHash);
 
-                gui.add(settings, 'Family', familyList).onChange(updateHash);
+                fam = gui.add(settings, 'Family', familyList).onChange(updateHash);
 
-                gui.add(settings, 'custom').onChange(updateHash);
+                cust = gui.add(settings, 'custom').onChange(updateHash);
+                $(cust.__li).on('keyup', 'input', function( e ){
+                    if ( settings.Family !== 'custom' ){
+                        settings._family = 'custom';
+                        fam.updateDisplay();
+                    }
+                });
 
                 gui.add(settings, 'connect').onChange(updateHash);
 

@@ -7,20 +7,9 @@ layout: default
 <aside id="more-info" class="closed">
     <a href="#" class="hide">hide</a>
     <div id="number-id">1</div>
-    <div class="tip">Tip: Select a family in the settings box to display more information about it below</div>
-    <a href="javascript:void(0);" id="what-is-this">What is this all about!?</a>
+    <div class="tip"><i class="icon-arrow-down"></i>Click below to see more information about the selected number family!<i class="icon-arrow-down"></i></div>
+    
     <div class="content">
-        <div id="describe-what">
-            <h2 class="title">What is this&#8230;?</h2>
-            <p>Here we're laying out the positive integers (1... 2... 3...) in different ways; a simple square grid, an <a href="http://www.youtube.com/watch?v=iFuR97YcSLM" target="_blank">Ulam Spiral</a>, a <a href="http://youtu.be/iFuR97YcSLM?t=6m7s" target="_blank">Sacks Spiral</a>, and a <a href="http://www.youtube.com/watch?v=DRjFV_DETKQ" target="_blank">Vogel (Fibonacci) Spiral</a>. Once the numbers are layed out, we choose some of them based on the <i>Family</i> that is selected in the settings, and we highlight the numbers that are part of that family. This lets you see some interesting patterns!</p>
-            <p>A very famous way to do this is laying out the numbers in an "Ulam Spiral" configuration and highlighting the prime numbers. Some interesting patterns emerge.</p>
-
-            <p>Also, if you share this page with the whole URL intact, it will automatically load with the same settings you see at the time you shared the URL.</p>
-
-            <a href="javascript:void(0);" id="back-to">Back to </a>
-            
-        </div>
-
         <div id="describe-primes">
             <h2 class="title">Prime Numbers</h2>
             <div class="row">
@@ -149,7 +138,9 @@ layout: default
             <h2 class="title">Random Numbers</h2>
             <div class="row">
                 <div class="column half">
-                    <p>A set of ordered randomly generated integers.</p>
+                    <p>A set of ordered pseudo-randomly generated integers.</p>
+
+                    <p>Every number has a 50/50 chance of being highlighted. If you wrote this as a custom function it would be: <code>n * number(random() > 0.5)</code>. Try it!</p>
 
                     <p>You can use this to compare a random pattern with other patterns.</p>
 
@@ -165,7 +156,9 @@ layout: default
             <h2 class="title">Random Numbers (weighted)</h2>
             <div class="row">
                 <div class="column half">
-                    <p>We're highlighting each number by a random amount.</p>
+                    <p>We're highlighting each number by a random amount (between 0 and 1).</p>
+
+                    <p>For every number we select a pseudo-random value between 0 and 1, and highlight the number by that value (1 means fully highlighted)</p>
 
                     <p>We didn't use radioactive material to generate these random numbers... but Numberphile has done that...</p>
                 </div>
