@@ -186,10 +186,10 @@ define(
 
             getPresets: function(){
                 var self = this
-                    ,shared = self.guiSharePreset ? { preset: 'shared', remembered: { shared: {'0': self.guiSharePreset } } } : null
+                    ,shared = self.guiSharePreset ? { remembered: { shared: {'0': self.guiSharePreset } } } : null
                     ;
                 
-                return $.extend(true, {}, DEFAULTS, shared);
+                return { load: $.extend(true, {}, DEFAULTS, shared), preset: self.guiSharePreset ? 'shared' : 'Default' };
             },
 
             clickCallback: function( e ){
@@ -352,7 +352,7 @@ define(
             initSettings: function(){
 
                 var self = this
-                    ,gui = new dat.GUI({ load: self.getPresets() })
+                    ,gui = new dat.GUI( self.getPresets() )
                     ,settings
                     ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
                     ,updateHash = function(){

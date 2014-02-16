@@ -10,6 +10,14 @@ html, body, #wrap-outer {
     input {
         line-height: 1.4;
     }
+
+    .save-row {
+        display: none;
+    }
+
+    &.main.a.has-save > ul {
+        margin-top: 0;
+    }
 }
 
 #progress {
