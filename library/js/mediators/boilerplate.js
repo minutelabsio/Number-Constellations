@@ -279,6 +279,7 @@ define(
                     });
 
                     hammertime.on('tap', '#more-info', function( e ){
+                            self.resolve('first-open');
                             $(this).toggleClass('closed');
                         })
                         .on('tap', '#more-info .hide', function( e ){
@@ -288,6 +289,7 @@ define(
                         })
                         .on('tap', '#what-is-this', function( e ){
                             e.preventDefault();
+                            self.resolve('first-open');
                             $('#more-info').removeClass('closed');
                             self.emit('describe', 'what');
                             return false;
@@ -345,6 +347,10 @@ define(
                             $('#back-to').attr('data-about', familyNames[type]);
                         }
                     });
+                });
+
+                self.after('first-open').then(function(){
+                    $('#more-info .tip .arrow').hide();
                 });
             },
 
