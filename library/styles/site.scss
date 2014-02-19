@@ -144,6 +144,12 @@ html, body, #wrap-outer {
                  -o-animation: flash 2s;
                     animation: flash 2s;
         }
+
+        .arrow {
+            position: absolute;
+            top: -80px;
+            left: 40%;
+        }
     }
 
     #what-is-this {
