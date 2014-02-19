@@ -874,6 +874,7 @@ define(
                 }
 
                 self.emit('refresh-highlight');
+                self.resolve('render');
             },
 
             /**
@@ -898,6 +899,16 @@ define(
 
                 self.on('redraw', function(){
                     $progress.hide();
+                });
+
+                self.after('render').then(function(){
+
+                    var el = $('#more-info .tip');
+
+                    _.delay(function(){
+                        el.addClass('flash');
+                    }, 2500);
+
                 });
             }
 
