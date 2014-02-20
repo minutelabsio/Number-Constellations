@@ -3,7 +3,7 @@ markdown: rdiscount
 exclude: ["README.md", "CNAME", "LICENSE", "build", "config.rb", "Gruntfile.js", "package.json", "jshint.json"]
 
 title : "Number Constellations"
-id : "" # changeme
+id : "77315656029"
 description : "See amazing patterns emerge when number spirals are highlighted in different ways"
 thumb: "thumb.gif"
 version: "0.0.1"
