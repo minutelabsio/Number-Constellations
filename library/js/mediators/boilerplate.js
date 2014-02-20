@@ -48,17 +48,18 @@ define(
         };
 
         var familyList = {
-            'Primes Numbers': 'primes'
+            'Prime Numbers': 'primes'
             ,'Carmichael': 'carmichael'
             ,'Fibonacci Numbers': 'fibonaccis'
             ,'Fibonacci Primes': 'fibonacciPrimes'
             ,'Fibonacci Sums' : 'fibonacciSums'
             ,'Pythagorean Primes': 'pythPrimes'
             ,'Pythagorean Triples': 'pythTriples'
+            ,'Multiplicative Partitions': 'multPartition'
             ,'Vampire Numbers': 'vampire'
             ,'Largest Metadromes in base n': 'metadromes'
             ,'Random': 'randoms'
-            ,'Random (weighted)': 'randomsWeighted'
+            ,'Random Opacity': 'randomsWeighted'
             ,'Custom Function': 'custom'
         };
 
@@ -359,7 +360,7 @@ define(
                 var self = this
                     ,gui = new dat.GUI( self.getPresets() )
                     ,settings
-                    ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
+                    ,weightedSeqs = ['fibonacciSums', 'khintchine', 'multPartition', 'randomsWeighted']
                     ,updateHash = function(){
                         self.emit('hash');
                     }
@@ -499,6 +500,8 @@ define(
                     ,'Ulam Spiral': 'ulamSpiral'
                     ,'Sacks Spiral': 'sacksSpiral'
                     ,'Vogel Spiral': 'vogelSpiral'
+                    ,'Triangle': 'triangle'
+                    ,'Pyramid': 'pyramid'
                 }).onChange(updateHash);
 
                 gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]).onChange(updateHash);
