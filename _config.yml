@@ -5,13 +5,13 @@ exclude: ["README.md", "CNAME", "LICENSE", "build", "config.rb", "Gruntfile.js",
 title : "Number Constellations"
 id : "" # changeme
 description : "See amazing patterns emerge when number spirals are highlighted in different ways"
-thumb: "http://minutelabs.io/assets/THUMB_IMAGE" # changeme
+thumb: "thumb.gif"
 version: "0.0.1"
 
 ml_url: "http://minutelabs.io"
 ml_library: "http://labs.minutelabs.io/library"
 ml_assets: "http://labs.minutelabs.io/assets"
-library_path: "library" # changeme
+library_path: "library-build"
 
 show :
   branding: true

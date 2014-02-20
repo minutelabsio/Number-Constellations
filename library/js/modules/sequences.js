@@ -8,14 +8,16 @@ define(
         'json!data/vampire.json',
         'json!data/carmichael.json',
         'json!data/metadromes.json',
-        'json!data/fibonacci-primes.json'
+        'json!data/fibonacci-primes.json',
+        'json!data/mult-partition.json'
     ],
     function(
         _,
         vampire,
         carmichael,
         metadromes,
-        fibonacciPrimes
+        fibonacciPrimes,
+        multPartition
     ){
         'use strict';
         /**
@@ -56,7 +58,7 @@ define(
                 ,add = true
                 ;
 
-            if ( max <= 2 ) return arr;
+            if ( max <= 2 ){ return arr; }
             
             while ( i < max ){
                 add = true;
@@ -205,6 +207,7 @@ define(
         API.carmichael = carmichael;
         API.metadromes = metadromes;
         API.fibonacciPrimes = fibonacciPrimes;
+        API.multPartition = multPartition;
 
         return API;
     }

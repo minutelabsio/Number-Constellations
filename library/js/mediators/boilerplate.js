@@ -1,6 +1,7 @@
 define(
     [
         'jquery',
+        'lodash',
         'moddef',
         'kinetic',
         'hammer.jquery',
@@ -13,6 +14,7 @@ define(
     ],
     function(
         $,
+        _,
         M,
         Kinetic,
         _Hammer,
@@ -48,17 +50,18 @@ define(
         };
 
         var familyList = {
-            'Primes Numbers': 'primes'
+            'Prime Numbers': 'primes'
             ,'Carmichael': 'carmichael'
             ,'Fibonacci Numbers': 'fibonaccis'
             ,'Fibonacci Primes': 'fibonacciPrimes'
             ,'Fibonacci Sums' : 'fibonacciSums'
             ,'Pythagorean Primes': 'pythPrimes'
             ,'Pythagorean Triples': 'pythTriples'
+            ,'Multiplicative Partitions': 'multPartition'
             ,'Vampire Numbers': 'vampire'
             ,'Largest Metadromes in base n': 'metadromes'
             ,'Random': 'randoms'
-            ,'Random (weighted)': 'randomsWeighted'
+            ,'Random Opacity': 'randomsWeighted'
             ,'Custom Function': 'custom'
         };
 
@@ -82,7 +85,9 @@ define(
             
             return function( n ){
                 scope.n = n + 1;
+                /* jshint -W061 */
                 return fn.eval( scope );
+                /* jshint +W061 */
             };
         }
 
@@ -238,7 +243,7 @@ define(
                     ;
 
                 function scaleEvent(){
-                    self.scale = Math.max(self.minScale, Math.min(self.maxScale, self.scale))
+                    self.scale = Math.max(self.minScale, Math.min(self.maxScale, self.scale));
                     self.emit('scale', self.scale);
                 }
 
@@ -359,7 +364,7 @@ define(
                 var self = this
                     ,gui = new dat.GUI( self.getPresets() )
                     ,settings
-                    ,weightedSeqs = ['fibonacciSums', 'khintchine', 'randomsWeighted']
+                    ,weightedSeqs = ['fibonacciSums', 'khintchine', 'multPartition', 'randomsWeighted']
                     ,updateHash = function(){
                         self.emit('hash');
                     }
@@ -423,7 +428,7 @@ define(
                         if ( val === 'custom' ){
                             try {
                                 this._familyArr = _.times( this._limit, mathParse( this._custom ) );
-                                this._familyArr = _(this._familyArr).sortBy().uniq( true ).reject(function( n ){ return n < 1 }).valueOf();
+                                this._familyArr = _(this._familyArr).sortBy().uniq( true ).reject(function( n ){ return n < 1; }).valueOf();
                             } catch ( e ){
                                 this._familyArr = [];
                                 return;
@@ -499,6 +504,8 @@ define(
                     ,'Ulam Spiral': 'ulamSpiral'
                     ,'Sacks Spiral': 'sacksSpiral'
                     ,'Vogel Spiral': 'vogelSpiral'
+                    ,'Triangle': 'triangle'
+                    ,'Pyramid': 'pyramid'
                 }).onChange(updateHash);
 
                 gui.add(settings, 'Limit', [10, 1e2, 1e3, 1e4, 5e4, 1e5]).onChange(updateHash);
@@ -798,10 +805,12 @@ define(
                     ,line = []
                     ;
 
+                connect = !!connect;
+
                 if ( seq !== true && 
                     seq === self.sequence && 
                     self.highlightColor === color && 
-                    self.connectLine.visible() === (!!connect) 
+                    self.connectLine.visible() === connect
                 ){
                     // no change
                     return;

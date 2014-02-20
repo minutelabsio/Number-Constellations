@@ -142,11 +142,62 @@ define(
             return arr;
         }
 
+        function triangle( stop ){
+
+            var i = 0
+                ,dtheta = Math.PI * 2/3
+                ,theta = 0
+                ,edge = 1
+                ,x = 0
+                ,y = 0
+                ,n = 1
+                ,arr = [ [0, 0] ]
+                ;
+
+            while ( n < stop ){
+                for ( i = 0; i < edge && n < stop; ++i, ++n ){
+                    x += Math.cos( theta );
+                    y += Math.sin( theta );
+                    arr.push([ x, y ]);
+                }
+                theta += dtheta;
+                edge++;
+            }
+
+            return arr;
+        }
+
+        function pyramid( stop ){
+
+            var i = 0
+                ,sx = Math.sqrt(3)
+                ,sy = 1
+                ,n = 0
+                ,row = 1
+                ,x = 0
+                ,y = 0
+                ,arr = []
+                ;
+
+            while ( n < stop ){
+                for ( i = 0; i < row && n < stop; ++i, ++n ){
+                    x = sx * (i - (row-1)/2);
+                    y = sy * row;
+                    arr.push([ x, -y ]);
+                }
+                row++;
+            }
+
+            return arr;
+        }
+
         return {
              ulamSpiral: ulamSpiral
             ,sacksSpiral: sacksSpiral
             ,vogelSpiral: vogelSpiral
             ,grid: grid
-        }
+            ,pyramid: pyramid
+            ,triangle: triangle
+        };
     }
 );
