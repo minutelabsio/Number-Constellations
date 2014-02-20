@@ -198,6 +198,6 @@ define(
             ,grid: grid
             ,pyramid: pyramid
             ,triangle: triangle
-        }
+        };
     }
 );
