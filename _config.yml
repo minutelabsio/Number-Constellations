@@ -10,7 +10,7 @@ version: "0.0.1"
 
 ml_url: "//minutelabs.io"
 ml_library: "//labs.minutelabs.io/library"
-ml_assets: "/labs.minutelabs.io/assets"
+ml_assets: "//labs.minutelabs.io/assets"
 library_path: "library-build"
 
 show :
